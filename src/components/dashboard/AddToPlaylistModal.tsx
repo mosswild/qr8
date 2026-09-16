@@ -5,6 +5,7 @@ import { Layers, Plus, Check, Loader2, FolderPlus, X } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { VideoItem } from './VideoCard';
 import { PlaylistWithVideos } from './PlaylistCard';
+import { apiFetch } from '@/lib/api';
 
 interface AddToPlaylistModalProps {
   isOpen: boolean;
@@ -32,7 +33,7 @@ export default function AddToPlaylistModal({
   const fetchPlaylists = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/playlists?domainId=${encodeURIComponent(domainId)}`);
+      const res = await apiFetch(`/api/playlists?domainId=${encodeURIComponent(domainId)}`);
       if (res.ok) {
         const data = await res.json();
         setPlaylists(data.playlists || []);
@@ -55,7 +56,7 @@ export default function AddToPlaylistModal({
   const handleAddToPlaylist = async (playlistId: string, playlistName: string) => {
     setAddingToId(playlistId);
     try {
-      const res = await fetch('/api/playlists', {
+      const res = await apiFetch('/api/playlists', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -94,7 +95,7 @@ export default function AddToPlaylistModal({
   const handleRemoveFromPlaylist = async (playlistId: string, playlistName: string) => {
     setRemovingFromId(playlistId);
     try {
-      const res = await fetch('/api/playlists', {
+      const res = await apiFetch('/api/playlists', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -136,7 +137,7 @@ export default function AddToPlaylistModal({
 
     setCreating(true);
     try {
-      const res = await fetch('/api/playlists', {
+      const res = await apiFetch('/api/playlists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

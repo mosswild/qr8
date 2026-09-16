@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Layers, Play, Trash2, List } from 'lucide-react';
 import { VideoItem } from './VideoCard';
 import PlaylistDetailsModal from './PlaylistDetailsModal';
+import { apiFetch } from '@/lib/api';
 
 export interface PlaylistWithVideos {
   id: string;
@@ -41,7 +42,7 @@ export default function PlaylistCard({ playlist, domainId, onDeleted, onUpdated 
 
     setDeleting(true);
     try {
-      const res = await fetch(`/api/playlists?id=${encodeURIComponent(playlist.id)}`, {
+      const res = await apiFetch(`/api/playlists?id=${encodeURIComponent(playlist.id)}`, {
         method: 'DELETE',
       });
       if (res.ok && onDeleted) {

@@ -20,6 +20,7 @@ import CreatorsModal from './CreatorsModal';
 import CreatePlaylistModal from './CreatePlaylistModal';
 import PlaylistCard, { PlaylistWithVideos } from './PlaylistCard';
 import { VideoItem } from './VideoCard';
+import { apiFetch } from '@/lib/api';
 
 interface WorkspaceDeckProps {
   domain: {
@@ -64,35 +65,35 @@ export default function WorkspaceDeck({
   const refreshWorkspaceData = async () => {
     try {
       // Refresh all videos
-      const allRes = await fetch(`/api/videos?domainId=${encodeURIComponent(domain.id)}&limit=100`);
+      const allRes = await apiFetch(`/api/videos?domainId=${encodeURIComponent(domain.id)}&limit=100`);
       if (allRes.ok) {
         const d = await allRes.json();
         setAllVideos(d.videos || []);
       }
 
       // Refresh whats new
-      const wnRes = await fetch(`/api/videos?domainId=${encodeURIComponent(domain.id)}&filter=whats_new&limit=20`);
+      const wnRes = await apiFetch(`/api/videos?domainId=${encodeURIComponent(domain.id)}&filter=whats_new&limit=20`);
       if (wnRes.ok) {
         const d = await wnRes.json();
         setWhatsNewVideos(d.videos || []);
       }
 
       // Refresh recent
-      const recRes = await fetch(`/api/videos?domainId=${encodeURIComponent(domain.id)}&filter=recent&limit=15`);
+      const recRes = await apiFetch(`/api/videos?domainId=${encodeURIComponent(domain.id)}&filter=recent&limit=15`);
       if (recRes.ok) {
         const d = await recRes.json();
         setRecentVideos(d.videos || []);
       }
 
       // Refresh playlists
-      const plRes = await fetch(`/api/playlists?domainId=${encodeURIComponent(domain.id)}`);
+      const plRes = await apiFetch(`/api/playlists?domainId=${encodeURIComponent(domain.id)}`);
       if (plRes.ok) {
         const d = await plRes.json();
         setPlaylists(d.playlists || []);
       }
 
       // Refresh creator count
-      const cRes = await fetch(`/api/rss/sync?domainId=${encodeURIComponent(domain.id)}`);
+      const cRes = await apiFetch(`/api/rss/sync?domainId=${encodeURIComponent(domain.id)}`);
       if (cRes.ok) {
         const d = await cRes.json();
         setCreatorCount((d.creators || []).length);

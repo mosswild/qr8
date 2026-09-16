@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Rss, RefreshCw, Trash2, ExternalLink, Loader2 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import { apiFetch } from '@/lib/api';
 
 interface CreatorItem {
   id: string;
@@ -33,7 +34,7 @@ export default function CreatorsModal({
   const fetchCreators = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/rss/sync?domainId=${encodeURIComponent(domainId)}`);
+      const res = await apiFetch(`/api/rss/sync?domainId=${encodeURIComponent(domainId)}`);
       if (res.ok) {
         const data = await res.json();
         setCreators(data.creators || []);
@@ -56,7 +57,7 @@ export default function CreatorsModal({
     setSyncing(true);
     setStatusText(null);
     try {
-      const res = await fetch('/api/rss/sync', {
+      const res = await apiFetch('/api/rss/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domainId }),
@@ -77,7 +78,7 @@ export default function CreatorsModal({
   const handleUnsubscribe = async (creatorId: string) => {
     if (!confirm('Unsubscribe from this channel? Existing downloaded items will remain.')) return;
     try {
-      const res = await fetch(`/api/rss/sync?id=${encodeURIComponent(creatorId)}`, {
+      const res = await apiFetch(`/api/rss/sync?id=${encodeURIComponent(creatorId)}`, {
         method: 'DELETE',
       });
       if (res.ok) {

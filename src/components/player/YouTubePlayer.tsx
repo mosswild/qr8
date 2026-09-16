@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { VideoItem } from '../dashboard/VideoCard';
 import Modal from '@/components/ui/Modal';
+import { apiFetch } from '@/lib/api';
 
 declare global {
   interface Window {
@@ -75,7 +76,7 @@ export default function YouTubePlayer({
   const handleCurate = async () => {
     setIsCurating(true);
     try {
-      const res = await fetch('/api/videos', {
+      const res = await apiFetch('/api/videos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoId: video.id, action: 'curate' }),
@@ -107,7 +108,7 @@ export default function YouTubePlayer({
     }
 
     try {
-      const res = await fetch('/api/playlists', {
+      const res = await apiFetch('/api/playlists', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -141,7 +142,7 @@ export default function YouTubePlayer({
   // Record initial play start in database
   const markAsPlayed = async () => {
     try {
-      await fetch('/api/videos', {
+      await apiFetch('/api/videos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoId: video.id, action: 'played' }),
@@ -158,7 +159,7 @@ export default function YouTubePlayer({
     setCompletionCount((c) => c + 1);
 
     try {
-      await fetch('/api/videos', {
+      await apiFetch('/api/videos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoId: video.id, action: 'completed' }),
@@ -188,7 +189,7 @@ export default function YouTubePlayer({
   const handleSaveNotes = async () => {
     setIsSavingNote(true);
     try {
-      await fetch('/api/videos', {
+      await apiFetch('/api/videos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoId: video.id, action: 'note', note: notes }),

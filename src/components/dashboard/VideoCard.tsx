@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Play, CheckCircle2, MoreVertical, Trash2, ExternalLink, Rss, Plus, Check, ListPlus, FolderMinus } from 'lucide-react';
 import AddToPlaylistModal from './AddToPlaylistModal';
+import { apiFetch } from '@/lib/api';
 
 export interface VideoItem {
   id: string;
@@ -63,7 +64,7 @@ export default function VideoCard({
     e.stopPropagation();
     setCurating(true);
     try {
-      const res = await fetch('/api/videos', {
+      const res = await apiFetch('/api/videos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ videoId: video.id, action: 'curate' }),
@@ -87,7 +88,7 @@ export default function VideoCard({
 
     setDeleting(true);
     try {
-      const res = await fetch(`/api/videos?id=${encodeURIComponent(video.id)}`, {
+      const res = await apiFetch(`/api/videos?id=${encodeURIComponent(video.id)}`, {
         method: 'DELETE',
       });
       if (res.ok && onDeleted) {
@@ -109,7 +110,7 @@ export default function VideoCard({
     if (!confirm(`Remove "${video.title}" from this playlist?`)) return;
 
     try {
-      const res = await fetch('/api/playlists', {
+      const res = await apiFetch('/api/playlists', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

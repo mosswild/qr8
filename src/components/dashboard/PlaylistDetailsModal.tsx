@@ -6,6 +6,7 @@ import { Layers, Play, Trash2, X, Film, Check } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { VideoItem } from './VideoCard';
 import { PlaylistWithVideos } from './PlaylistCard';
+import { apiFetch } from '@/lib/api';
 
 interface PlaylistDetailsModalProps {
   isOpen: boolean;
@@ -34,7 +35,7 @@ export default function PlaylistDetailsModal({
   const handleRemoveVideo = async (videoId: string, videoTitle: string) => {
     setRemovingId(videoId);
     try {
-      const res = await fetch('/api/playlists', {
+      const res = await apiFetch('/api/playlists', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

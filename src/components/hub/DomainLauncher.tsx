@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import DomainCard, { DomainItem } from './DomainCard';
 import CreateDomainModal from './CreateDomainModal';
+import { apiFetch } from '@/lib/api';
 
 interface DomainLauncherProps {
   initialDomains: DomainItem[];
@@ -15,7 +16,7 @@ export default function DomainLauncher({ initialDomains }: DomainLauncherProps) 
 
   const refreshDomains = async () => {
     try {
-      const res = await fetch('/api/domains');
+      const res = await apiFetch('/api/domains');
       if (res.ok) {
         const data = await res.json();
         setDomains(data.domains || []);

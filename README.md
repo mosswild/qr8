@@ -35,7 +35,7 @@ Run with Docker Compose:
 docker compose up -d --build
 ```
 
-Access the web interface at **`http://localhost:3000`**. All SQLite data is persisted locally in `./data/qr8.db`.
+Access the web interface at **`http://<ip_address>:3000/qr8`** (or **`http://localhost:3000/qr8`**; hitting root `/` also automatically redirects to `/qr8`). All SQLite data is persisted locally in `./data/qr8.db`.
 
 ---
 
@@ -60,7 +60,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser. The default sample workspaces ("Yoga & Mobility", "Strength & Calisthenics", "Culinary Techniques") are automatically seeded on initial launch.
+Open [http://localhost:3000/qr8](http://localhost:3000/qr8) in your browser. The default sample workspaces ("Yoga & Mobility", "Strength & Calisthenics", "Culinary Techniques") are automatically seeded on initial launch.
 
 ### Verification Suite
 

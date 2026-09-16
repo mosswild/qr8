@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Dices, Sparkles } from 'lucide-react';
 import Shelf from './Shelf';
 import { VideoItem } from './VideoCard';
+import { apiFetch } from '@/lib/api';
 
 interface DailyShuffleProps {
   initialVideos: VideoItem[];
@@ -24,7 +25,7 @@ export default function DailyShuffle({
   const handleReroll = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/videos?domainId=${encodeURIComponent(domainId)}&filter=daily`);
+      const res = await apiFetch(`/api/videos?domainId=${encodeURIComponent(domainId)}&filter=daily`);
       if (res.ok) {
         const data = await res.json();
         setVideos(data.videos || []);

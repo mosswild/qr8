@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Film, Rss, Trash2, Layers } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 export interface DomainItem {
   id: string;
@@ -31,7 +32,7 @@ export default function DomainCard({ domain, onDeleted }: DomainCardProps) {
 
     setDeleting(true);
     try {
-      const res = await fetch(`/api/domains?id=${encodeURIComponent(domain.id)}`, {
+      const res = await apiFetch(`/api/domains?id=${encodeURIComponent(domain.id)}`, {
         method: 'DELETE',
       });
       if (res.ok && onDeleted) {

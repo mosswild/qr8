@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { FolderPlus, Loader2 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import { apiFetch } from '@/lib/api';
 
 interface CreateDomainModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ export default function CreateDomainModal({
     setError(null);
 
     try {
-      const res = await fetch('/api/domains', {
+      const res = await apiFetch('/api/domains', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), icon }),

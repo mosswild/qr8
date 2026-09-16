@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, Video, Check, AlertCircle, Loader2 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
+import { apiFetch } from '@/lib/api';
 
 interface QuickAddModalProps {
   isOpen: boolean;
@@ -32,7 +33,7 @@ export default function QuickAddModal({
     setStatusMessage(null);
 
     try {
-      const res = await fetch('/api/ingest', {
+      const res = await apiFetch('/api/ingest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim(), domainId }),

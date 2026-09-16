@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ListPlus, Loader2 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { VideoItem } from './VideoCard';
+import { apiFetch } from '@/lib/api';
 
 interface CreatePlaylistModalProps {
   isOpen: boolean;
@@ -36,7 +37,7 @@ export default function CreatePlaylistModal({
 
     setLoading(true);
     try {
-      const res = await fetch('/api/playlists', {
+      const res = await apiFetch('/api/playlists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
