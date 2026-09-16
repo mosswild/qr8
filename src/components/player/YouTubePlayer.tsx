@@ -21,6 +21,9 @@ import {
   X,
   Plus,
   Trash2,
+  Shuffle,
+  Repeat,
+  Repeat1,
 } from 'lucide-react';
 import { VideoItem } from '../dashboard/VideoCard';
 import Modal from '@/components/ui/Modal';
@@ -68,10 +71,69 @@ export default function YouTubePlayer({
   const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null);
   const [isCurated, setIsCurated] = useState(video.source_type === 'manual');
   const [isCurating, setIsCurating] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [loopMode, setLoopMode] = useState<'off' | 'all' | 'one'>('off');
 
+  // Load shuffle and loop preferences from localStorage
   useEffect(() => {
-    setQueueVideos(playlistVideos);
-  }, [playlistVideos]);
+    try {
+      const savedShuffle = localStorage.getItem('qr8_player_shuffle');
+      if (savedShuffle === 'true') {
+        setIsShuffle(true);
+      }
+      const savedLoop = localStorage.getItem('qr8_player_loop');
+      if (savedLoop === 'all' || savedLoop === 'one' || savedLoop === 'off') {
+        setLoopMode(savedLoop as 'off' | 'all' | 'one');
+      }
+    } catch (e) {
+      // ignore in environments without localStorage
+    }
+  }, []);
+
+  // Sync queue videos on playlist change or shuffle toggle
+  useEffect(() => {
+    if (isShuffle && playlistVideos.length > 0) {
+      const current = playlistVideos.find((v) => v.youtube_id === video.youtube_id);
+      const others = playlistVideos.filter((v) => v.youtube_id !== video.youtube_id);
+      const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
+      setQueueVideos(current ? [current, ...shuffledOthers] : shuffledOthers);
+    } else {
+      setQueueVideos(playlistVideos);
+    }
+  }, [playlistVideos, isShuffle, video.youtube_id]);
+
+  const handleToggleShuffle = () => {
+    const nextShuffle = !isShuffle;
+    setIsShuffle(nextShuffle);
+    try {
+      localStorage.setItem('qr8_player_shuffle', String(nextShuffle));
+    } catch (e) {}
+
+    if (nextShuffle) {
+      const current = queueVideos.find((v) => v.youtube_id === video.youtube_id);
+      const others = queueVideos.filter((v) => v.youtube_id !== video.youtube_id);
+      const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
+      setQueueVideos(current ? [current, ...shuffledOthers] : shuffledOthers);
+    } else {
+      setQueueVideos(playlistVideos);
+    }
+  };
+
+  const handleReshuffle = () => {
+    if (!isShuffle) return;
+    const current = queueVideos.find((v) => v.youtube_id === video.youtube_id);
+    const others = playlistVideos.filter((v) => v.youtube_id !== video.youtube_id);
+    const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
+    setQueueVideos(current ? [current, ...shuffledOthers] : shuffledOthers);
+  };
+
+  const handleCycleLoop = () => {
+    const nextMode = loopMode === 'off' ? 'all' : loopMode === 'all' ? 'one' : 'off';
+    setLoopMode(nextMode);
+    try {
+      localStorage.setItem('qr8_player_loop', nextMode);
+    } catch (e) {}
+  };
 
   const handleCurate = async () => {
     setIsCurating(true);
@@ -93,9 +155,13 @@ export default function YouTubePlayer({
 
   const hasPlaylist = queueVideos.length > 0;
   const activePlaylistIndex = queueVideos.findIndex((v) => v.youtube_id === video.youtube_id);
+  const isPlaylistLooping =
+    activePlaylistIndex === queueVideos.length - 1 && loopMode === 'all';
   const nextVideo =
     activePlaylistIndex >= 0 && activePlaylistIndex < queueVideos.length - 1
       ? queueVideos[activePlaylistIndex + 1]
+      : loopMode === 'all' && queueVideos.length > 0
+      ? queueVideos[0]
       : null;
 
   const handleRemoveFromQueue = async (e: React.MouseEvent, plItem: VideoItem) => {
@@ -168,7 +234,19 @@ export default function YouTubePlayer({
       console.error('Failed to record completion:', err);
     }
 
-    // Auto-advance if next video in playlist
+    // If loopMode is 'one', loop current video
+    if (loopMode === 'one') {
+      setTimeout(() => {
+        if (ytPlayerRef.current) {
+          ytPlayerRef.current.seekTo(0);
+          ytPlayerRef.current.playVideo();
+          setCompleted(false);
+        }
+      }, 500);
+      return;
+    }
+
+    // Auto-advance if next video in playlist (including loop all)
     if (nextVideo) {
       setAutoAdvanceCountdown(3);
       const timer = setInterval(() => {
@@ -353,6 +431,52 @@ export default function YouTubePlayer({
             </button>
           )}
 
+          {/* Shuffle Toggle */}
+          {hasPlaylist && (
+            <button
+              onClick={handleToggleShuffle}
+              className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+                isShuffle
+                  ? 'bg-violet-950/60 border-violet-500/50 text-violet-300 shadow-sm'
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+              }`}
+              title={isShuffle ? 'Shuffle: On (click to disable)' : 'Shuffle: Off (click to enable)'}
+              aria-label="Toggle Shuffle"
+            >
+              <Shuffle className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Shuffle</span>
+            </button>
+          )}
+
+          {/* Loop Toggle */}
+          {hasPlaylist && (
+            <button
+              onClick={handleCycleLoop}
+              className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+                loopMode !== 'off'
+                  ? 'bg-violet-950/60 border-violet-500/50 text-violet-300 shadow-sm'
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+              }`}
+              title={
+                loopMode === 'all'
+                  ? 'Looping Entire Playlist (click for single video loop)'
+                  : loopMode === 'one'
+                  ? 'Looping Single Video (click to disable loop)'
+                  : 'Loop: Off (click to enable playlist loop)'
+              }
+              aria-label="Cycle Loop Mode"
+            >
+              {loopMode === 'one' ? (
+                <Repeat1 className="w-3.5 h-3.5 text-violet-300" />
+              ) : (
+                <Repeat className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden md:inline">
+                {loopMode === 'all' ? 'Loop' : loopMode === 'one' ? 'Loop 1' : 'Loop'}
+              </span>
+            </button>
+          )}
+
           {/* Completion Counter */}
           <div
             className={`hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border ${
@@ -386,8 +510,9 @@ export default function YouTubePlayer({
             <Link
               href={`/w/${domainId}/player?v=${nextVideo.youtube_id}${playlistId ? `&playlist=${playlistId}` : ''}`}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow transition-colors"
+              title={isPlaylistLooping ? 'Loop back to beginning' : 'Next routine in playlist'}
             >
-              <span>Next</span>
+              <span>{isPlaylistLooping ? 'Loop' : 'Next'}</span>
               <SkipForward className="w-3.5 h-3.5" />
             </Link>
           )}
@@ -411,7 +536,9 @@ export default function YouTubePlayer({
               <div className="absolute inset-x-0 bottom-12 flex items-center justify-center z-20 pointer-events-auto">
                 <div className="bg-black/90 backdrop-blur-md border border-violet-500/50 p-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in fade-in">
                   <div>
-                    <p className="text-xs text-violet-300 font-semibold">Routine Complete!</p>
+                    <p className="text-xs text-violet-300 font-semibold">
+                      {isPlaylistLooping ? 'Playlist Complete • Looping to Start' : 'Routine Complete!'}
+                    </p>
                     <p className="text-sm font-bold text-white line-clamp-1 max-w-xs">
                       Up Next: {nextVideo.title}
                     </p>
@@ -537,6 +664,60 @@ export default function YouTubePlayer({
               >
                 <X className="w-4 h-4" />
               </button>
+            </div>
+
+            {/* Queue Controls Toolbar */}
+            <div className="px-3.5 py-2 bg-zinc-950/60 border-b border-zinc-800/60 flex items-center justify-between text-xs">
+              <span className="text-[11px] text-zinc-400 font-medium">Playback Mode</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleToggleShuffle}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                    isShuffle
+                      ? 'bg-violet-900/40 border-violet-500/50 text-violet-200'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                  title={isShuffle ? 'Disable Shuffle' : 'Enable Shuffle / Randomize'}
+                >
+                  <Shuffle className="w-3 h-3" />
+                  <span>Shuffle</span>
+                </button>
+
+                {isShuffle && (
+                  <button
+                    onClick={handleReshuffle}
+                    className="p-1 rounded-lg text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
+                    title="Reshuffle playlist order"
+                  >
+                    <Shuffle className="w-3 h-3 text-violet-400" />
+                  </button>
+                )}
+
+                <button
+                  onClick={handleCycleLoop}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                    loopMode !== 'off'
+                      ? 'bg-violet-900/40 border-violet-500/50 text-violet-200'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                  title={
+                    loopMode === 'all'
+                      ? 'Loop Playlist (Active)'
+                      : loopMode === 'one'
+                      ? 'Loop Single Video (Active)'
+                      : 'Loop Off'
+                  }
+                >
+                  {loopMode === 'one' ? (
+                    <Repeat1 className="w-3 h-3 text-violet-300" />
+                  ) : (
+                    <Repeat className="w-3 h-3" />
+                  )}
+                  <span>
+                    {loopMode === 'all' ? 'Loop (All)' : loopMode === 'one' ? 'Loop (1)' : 'Loop (Off)'}
+                  </span>
+                </button>
+              </div>
             </div>
 
             {/* Scrollable Queue List */}
