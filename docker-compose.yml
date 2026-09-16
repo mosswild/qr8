@@ -1,0 +1,15 @@
+services:
+  qr8:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qr8
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/data/qr8.db
+      - RSS_POLL_INTERVAL_HOURS=6
+    volumes:
+      - ./data:/data

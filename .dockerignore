@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.gitignore
+README.md
+Brief.md
+data/*.db
+data/*.db-wal
+data/*.db-shm
+npm-debug.log*
+.DS_Store
