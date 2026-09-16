@@ -10,6 +10,7 @@ interface WorkspaceMenuProps {
   onRenameClick: () => void;
   onArchiveToggle: () => void;
   onDeleteClick: () => void;
+  onOpenChange?: (open: boolean) => void;
   buttonClassName?: string;
   menuAlign?: 'left' | 'right';
 }
@@ -21,22 +22,28 @@ export default function WorkspaceMenu({
   onRenameClick,
   onArchiveToggle,
   onDeleteClick,
+  onOpenChange,
   buttonClassName,
   menuAlign = 'right',
 }: WorkspaceMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const updateOpen = (open: boolean) => {
+    setIsOpen(open);
+    if (onOpenChange) onOpenChange(open);
+  };
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
+        updateOpen(false);
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setIsOpen(false);
+        updateOpen(false);
       }
     };
 
@@ -53,13 +60,13 @@ export default function WorkspaceMenu({
   const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsOpen((prev) => !prev);
+    updateOpen(!isOpen);
   };
 
   const handleAction = (e: React.MouseEvent, action: () => void) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsOpen(false);
+    updateOpen(false);
     action();
   };
 

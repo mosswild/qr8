@@ -36,6 +36,7 @@ export default function DomainCard({
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isArchived = Boolean(domain.is_archived);
 
@@ -81,29 +82,32 @@ export default function DomainCard({
 
   return (
     <div
-      className={`group relative overflow-hidden bg-[#11131d] border border-zinc-800/90 hover:border-indigo-500/50 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-950/30 flex flex-col justify-between ${
-        deleting || isArchiving ? 'opacity-30 pointer-events-none' : ''
-      }`}
+      className={`group relative bg-[#11131d] border border-zinc-800/90 hover:border-indigo-500/50 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-950/30 flex flex-col justify-between ${
+        isMenuOpen ? 'z-40' : 'z-10'
+      } ${deleting || isArchiving ? 'opacity-30 pointer-events-none' : ''}`}
     >
       {/* Top Banner Thumbnail: Full width, zero top/left/right margins, blended downward */}
-      <div className="relative w-full h-44 overflow-hidden bg-zinc-900/80">
-        {domain.thumbnail_url ? (
-          <>
-            <img
-              src={domain.thumbnail_url}
-              alt={domain.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            {/* Smooth gradient blend into the card body */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#11131d] via-[#11131d]/60 to-transparent" />
-          </>
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-zinc-600 bg-gradient-to-br from-indigo-950/20 to-zinc-900/60">
-            <Layers className="w-8 h-8 text-zinc-500 mb-1 opacity-50" />
-            <span className="text-[11px] font-medium text-zinc-500">Empty Workspace</span>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#11131d] via-[#11131d]/60 to-transparent" />
-          </div>
-        )}
+      <div className="relative w-full h-44 bg-zinc-900/80 rounded-t-2xl">
+        {/* Clipped image and gradient layer */}
+        <div className="absolute inset-0 overflow-hidden rounded-t-2xl">
+          {domain.thumbnail_url ? (
+            <>
+              <img
+                src={domain.thumbnail_url}
+                alt={domain.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              {/* Smooth gradient blend into the card body */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#11131d] via-[#11131d]/60 to-transparent" />
+            </>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center text-zinc-600 bg-gradient-to-br from-indigo-950/20 to-zinc-900/60">
+              <Layers className="w-8 h-8 text-zinc-500 mb-1 opacity-50" />
+              <span className="text-[11px] font-medium text-zinc-500">Empty Workspace</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#11131d] via-[#11131d]/60 to-transparent" />
+            </div>
+          )}
+        </div>
 
         {/* Archived Badge if archived */}
         {isArchived && (
@@ -114,8 +118,8 @@ export default function DomainCard({
           </div>
         )}
 
-        {/* Workspace "..." Menu Button: accessible on touch/mobile and hover on desktop */}
-        <div className="absolute top-3 right-3 z-20 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        {/* Workspace "..." Menu Button: unclipped so dropdown floats without clipping */}
+        <div className="absolute top-3 right-3 z-30 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           <WorkspaceMenu
             domainId={domain.id}
             domainName={domain.name}
@@ -123,6 +127,7 @@ export default function DomainCard({
             onRenameClick={() => setIsRenameOpen(true)}
             onArchiveToggle={handleToggleArchive}
             onDeleteClick={() => setIsConfirmOpen(true)}
+            onOpenChange={setIsMenuOpen}
             buttonClassName="p-2 rounded-xl bg-black/70 backdrop-blur-md text-zinc-400 hover:text-white hover:bg-zinc-800 border border-white/10 transition-colors shadow-lg active:scale-95"
             menuAlign="right"
           />
