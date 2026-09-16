@@ -5,14 +5,26 @@ import { initRssScheduler } from '@/lib/cron/scheduler';
 // Ensure scheduler is active
 initRssScheduler();
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const archivedParam = searchParams.get('archived');
+
     const db = getDb();
+    
+    let whereClause = 'WHERE COALESCE(d.is_archived, 0) = 0';
+    if (archivedParam === 'true') {
+      whereClause = 'WHERE COALESCE(d.is_archived, 0) = 1';
+    } else if (archivedParam === 'all') {
+      whereClause = '';
+    }
+
     const domains = db.prepare(`
       SELECT 
         d.id, 
         d.name, 
         d.icon, 
+        COALESCE(d.is_archived, 0) as is_archived,
         d.sort_order, 
         d.created_at,
         COUNT(DISTINCT v.id) as video_count,
@@ -21,11 +33,24 @@ export async function GET() {
       FROM domains d
       LEFT JOIN videos v ON v.domain_id = d.id
       LEFT JOIN creators c ON c.domain_id = d.id
+      ${whereClause}
       GROUP BY d.id
       ORDER BY d.sort_order ASC, d.created_at ASC
     `).all();
 
-    return NextResponse.json({ domains });
+    const archivedCountRow = db.prepare(
+      'SELECT COUNT(*) as count FROM domains WHERE COALESCE(is_archived, 0) = 1'
+    ).get() as { count: number };
+
+    const activeCountRow = db.prepare(
+      'SELECT COUNT(*) as count FROM domains WHERE COALESCE(is_archived, 0) = 0'
+    ).get() as { count: number };
+
+    return NextResponse.json({ 
+      domains,
+      activeCount: activeCountRow?.count || 0,
+      archivedCount: archivedCountRow?.count || 0 
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -57,12 +82,55 @@ export async function POST(req: Request) {
     const sortOrder = nextOrderRow.next_order;
 
     db.prepare(`
-      INSERT INTO domains (id, name, icon, sort_order)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO domains (id, name, icon, is_archived, sort_order)
+      VALUES (?, ?, ?, 0, ?)
     `).run(slug, name.trim(), icon || '', sortOrder);
 
     const created = db.prepare('SELECT * FROM domains WHERE id = ?').get(slug);
     return NextResponse.json({ domain: created }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, name, is_archived } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Domain ID is required' }, { status: 400 });
+    }
+
+    const db = getDb();
+    const existing = db.prepare('SELECT * FROM domains WHERE id = ?').get(id) as any;
+    if (!existing) {
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
+    }
+
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (name !== undefined) {
+      if (!name.trim()) {
+        return NextResponse.json({ error: 'Workspace name cannot be empty' }, { status: 400 });
+      }
+      updates.push('name = ?');
+      values.push(name.trim());
+    }
+
+    if (is_archived !== undefined) {
+      updates.push('is_archived = ?');
+      values.push(is_archived ? 1 : 0);
+    }
+
+    if (updates.length > 0) {
+      values.push(id);
+      db.prepare(`UPDATE domains SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    }
+
+    const updated = db.prepare('SELECT * FROM domains WHERE id = ?').get(id);
+    return NextResponse.json({ domain: updated });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

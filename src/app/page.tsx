@@ -11,6 +11,7 @@ export default async function HomePage() {
       d.id, 
       d.name, 
       d.icon, 
+      COALESCE(d.is_archived, 0) as is_archived,
       d.sort_order, 
       d.created_at,
       COUNT(DISTINCT v.id) as video_count,
@@ -19,9 +20,19 @@ export default async function HomePage() {
     FROM domains d
     LEFT JOIN videos v ON v.domain_id = d.id
     LEFT JOIN creators c ON c.domain_id = d.id
+    WHERE COALESCE(d.is_archived, 0) = 0
     GROUP BY d.id
     ORDER BY d.sort_order ASC, d.created_at ASC
   `).all() as any[];
 
-  return <DomainLauncher initialDomains={domains} />;
+  const archivedCountRow = db.prepare(
+    'SELECT COUNT(*) as count FROM domains WHERE COALESCE(is_archived, 0) = 1'
+  ).get() as { count: number };
+
+  return (
+    <DomainLauncher 
+      initialDomains={domains} 
+      initialArchivedCount={archivedCountRow?.count || 0} 
+    />
+  );
 }

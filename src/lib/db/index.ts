@@ -27,6 +27,17 @@ export function getDb(): Database.Database {
     db.exec(schemaSql);
   }
 
+  // Ensure incremental migrations
+  try {
+    const tableInfo = db.prepare("PRAGMA table_info(domains)").all() as any[];
+    const hasIsArchived = tableInfo.some((c) => c.name === 'is_archived');
+    if (!hasIsArchived) {
+      db.exec("ALTER TABLE domains ADD COLUMN is_archived INTEGER DEFAULT 0");
+    }
+  } catch (err) {
+    console.error('Migration error checking is_archived column:', err);
+  }
+
   // Ensure default seed data if no domains exist
   seedInitialData(db);
 

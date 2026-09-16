@@ -25,6 +25,8 @@ import PlaylistCard, { PlaylistWithVideos } from './PlaylistCard';
 import { VideoItem } from './VideoCard';
 import Modal from '@/components/ui/Modal';
 import { apiFetch } from '@/lib/api';
+import WorkspaceMenu from '@/components/common/WorkspaceMenu';
+import RenameDomainModal from '@/components/hub/RenameDomainModal';
 
 interface WorkspaceDeckProps {
   domain: {
@@ -58,14 +60,39 @@ export default function WorkspaceDeck({
   const [recentVideos, setRecentVideos] = useState<VideoItem[]>(initialRecentVideos);
   const [playlists, setPlaylists] = useState<PlaylistWithVideos[]>(initialPlaylists);
   const [creatorCount, setCreatorCount] = useState<number>(initialCreatorCount);
+  const [domainName, setDomainName] = useState(domain.name);
 
   // Modal States
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isCreatorsOpen, setIsCreatorsOpen] = useState(false);
   const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
   const [isDomainPickerOpen, setIsDomainPickerOpen] = useState(false);
+  const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingWorkspace, setDeletingWorkspace] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+
+  const handleRenamed = (newName: string) => {
+    setDomainName(newName);
+  };
+
+  const handleArchiveWorkspace = async () => {
+    setIsArchiving(true);
+    try {
+      const res = await apiFetch('/api/domains', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: domain.id, is_archived: 1 }),
+      });
+      if (res.ok) {
+        router.push('/');
+      }
+    } catch (err) {
+      console.error('Failed to archive workspace:', err);
+    } finally {
+      setIsArchiving(false);
+    }
+  };
 
   const handleDeleteWorkspace = async () => {
     setDeletingWorkspace(true);
@@ -161,7 +188,7 @@ export default function WorkspaceDeck({
                 className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800/80 border border-zinc-800 transition-colors max-w-[170px] sm:max-w-xs"
               >
                 <span className="font-bold text-sm sm:text-base text-white tracking-tight truncate">
-                  {domain.name}
+                  {domainName}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
               </button>
@@ -187,7 +214,7 @@ export default function WorkspaceDeck({
                             : 'hover:bg-zinc-800 text-zinc-300'
                         }`}
                       >
-                        <span className="truncate">{d.name}</span>
+                        <span className="truncate">{d.id === domain.id ? domainName : d.name}</span>
                       </Link>
                     ))}
                     <div className="border-t border-zinc-800/80 mt-1 pt-1 space-y-0.5">
@@ -206,7 +233,7 @@ export default function WorkspaceDeck({
                         className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition-colors text-left"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete &quot;{domain.name}&quot;</span>
+                        <span>Delete &quot;{domainName}&quot;</span>
                       </button>
                     </div>
                   </div>
@@ -251,15 +278,17 @@ export default function WorkspaceDeck({
               <span>Quick Add</span>
             </button>
 
-            {/* Delete Workspace button */}
-            <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-rose-500/50 text-zinc-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
-              title={`Delete workspace "${domain.name}"`}
-              aria-label="Delete workspace"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {/* Workspace Options Menu ("...") */}
+            <WorkspaceMenu
+              domainId={domain.id}
+              domainName={domainName}
+              isArchived={false}
+              onRenameClick={() => setIsRenameOpen(true)}
+              onArchiveToggle={handleArchiveWorkspace}
+              onDeleteClick={() => setIsDeleteModalOpen(true)}
+              buttonClassName="p-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white transition-colors"
+              menuAlign="right"
+            />
           </div>
         </div>
       </header>
@@ -398,6 +427,15 @@ export default function WorkspaceDeck({
         onPlaylistCreated={refreshWorkspaceData}
       />
 
+      {/* Rename Workspace Modal */}
+      <RenameDomainModal
+        isOpen={isRenameOpen}
+        onClose={() => setIsRenameOpen(false)}
+        domainId={domain.id}
+        currentName={domainName}
+        onRenamed={handleRenamed}
+      />
+
       {/* Delete Workspace Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
@@ -409,7 +447,7 @@ export default function WorkspaceDeck({
           <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/30 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-rose-200">
-              <p className="font-semibold text-sm text-white mb-1">Delete &quot;{domain.name}&quot;?</p>
+              <p className="font-semibold text-sm text-white mb-1">Delete &quot;{domainName}&quot;?</p>
               <p className="text-zinc-300">
                 This will permanently remove this workspace along with all its curated routines, playlists, and creator subscriptions.
               </p>

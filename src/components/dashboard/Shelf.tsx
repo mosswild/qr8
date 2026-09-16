@@ -16,6 +16,7 @@ interface ShelfProps {
   onVideoCurated?: (videoId: string) => void;
   onPlaylistUpdated?: () => void;
   playlistContext?: string;
+  className?: string;
 }
 
 export default function Shelf({
@@ -30,6 +31,7 @@ export default function Shelf({
   onVideoCurated,
   onPlaylistUpdated,
   playlistContext,
+  className,
 }: ShelfProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +43,7 @@ export default function Shelf({
   };
 
   return (
-    <section className="mb-10 group/shelf">
+    <section className={`${className !== undefined ? className : 'mb-10'} group/shelf`}>
       {/* Shelf Header */}
       <div className="flex items-start sm:items-center justify-between gap-3 mb-4 px-1">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -96,7 +98,7 @@ export default function Shelf({
       ) : (
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto pb-4 pt-1 px-1 shelf-scroll scroll-smooth"
+          className="flex gap-4 overflow-x-auto pb-2 pt-1 px-1 shelf-scroll scroll-smooth"
         >
           {videos.map((video) => (
             <VideoCard

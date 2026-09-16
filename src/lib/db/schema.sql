@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS domains (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     icon TEXT,
+    is_archived INTEGER DEFAULT 0,
     sort_order INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

@@ -2,14 +2,17 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Film, Rss, Trash2, Layers, AlertTriangle, Loader2 } from 'lucide-react';
+import { Film, Rss, Layers, AlertTriangle, Loader2 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import Modal from '@/components/ui/Modal';
+import WorkspaceMenu from '@/components/common/WorkspaceMenu';
+import RenameDomainModal from '@/components/hub/RenameDomainModal';
 
 export interface DomainItem {
   id: string;
   name: string;
   icon?: string;
+  is_archived?: number | boolean;
   thumbnail_url?: string;
   sort_order: number;
   video_count: number;
@@ -19,17 +22,22 @@ export interface DomainItem {
 interface DomainCardProps {
   domain: DomainItem;
   onDeleted?: (id: string) => void;
+  onRenamed?: (id: string, newName: string) => void;
+  onArchiveToggled?: (id: string, newArchived: boolean) => void;
 }
 
-export default function DomainCard({ domain, onDeleted }: DomainCardProps) {
+export default function DomainCard({
+  domain,
+  onDeleted,
+  onRenamed,
+  onArchiveToggled,
+}: DomainCardProps) {
   const [deleting, setDeleting] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isRenameOpen, setIsRenameOpen] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
-  const handleOpenConfirm = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsConfirmOpen(true);
-  };
+  const isArchived = Boolean(domain.is_archived);
 
   const handleConfirmDelete = async () => {
     setDeleting(true);
@@ -50,10 +58,31 @@ export default function DomainCard({ domain, onDeleted }: DomainCardProps) {
     }
   };
 
+  const handleToggleArchive = async () => {
+    setIsArchiving(true);
+    const newArchived = !isArchived;
+    try {
+      const res = await apiFetch('/api/domains', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: domain.id, is_archived: newArchived ? 1 : 0 }),
+      });
+      if (res.ok) {
+        if (onArchiveToggled) {
+          onArchiveToggled(domain.id, newArchived);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to toggle archive workspace:', err);
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
   return (
     <div
       className={`group relative overflow-hidden bg-[#11131d] border border-zinc-800/90 hover:border-indigo-500/50 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-950/30 flex flex-col justify-between ${
-        deleting ? 'opacity-30 pointer-events-none' : ''
+        deleting || isArchiving ? 'opacity-30 pointer-events-none' : ''
       }`}
     >
       {/* Top Banner Thumbnail: Full width, zero top/left/right margins, blended downward */}
@@ -76,16 +105,27 @@ export default function DomainCard({ domain, onDeleted }: DomainCardProps) {
           </div>
         )}
 
-        {/* Delete Action Button: clearly accessible on touch/mobile and hover on desktop */}
+        {/* Archived Badge if archived */}
+        {isArchived && (
+          <div className="absolute top-3 left-3 z-20">
+            <span className="px-2.5 py-1 rounded-full bg-amber-500/20 backdrop-blur-md text-amber-300 text-[10px] font-bold border border-amber-500/30">
+              Archived
+            </span>
+          </div>
+        )}
+
+        {/* Workspace "..." Menu Button: accessible on touch/mobile and hover on desktop */}
         <div className="absolute top-3 right-3 z-20 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={handleOpenConfirm}
-            className="p-2 rounded-xl bg-black/70 backdrop-blur-md text-zinc-400 hover:text-rose-400 hover:bg-rose-950/80 border border-white/10 transition-colors shadow-lg active:scale-95"
-            title="Delete workspace"
-            aria-label="Delete workspace"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <WorkspaceMenu
+            domainId={domain.id}
+            domainName={domain.name}
+            isArchived={isArchived}
+            onRenameClick={() => setIsRenameOpen(true)}
+            onArchiveToggle={handleToggleArchive}
+            onDeleteClick={() => setIsConfirmOpen(true)}
+            buttonClassName="p-2 rounded-xl bg-black/70 backdrop-blur-md text-zinc-400 hover:text-white hover:bg-zinc-800 border border-white/10 transition-colors shadow-lg active:scale-95"
+            menuAlign="right"
+          />
         </div>
       </div>
 
@@ -113,7 +153,18 @@ export default function DomainCard({ domain, onDeleted }: DomainCardProps) {
         aria-label={`Open workspace ${domain.name}`}
       />
 
-      {/* Confirmation Modal */}
+      {/* Rename Modal */}
+      <RenameDomainModal
+        isOpen={isRenameOpen}
+        onClose={() => setIsRenameOpen(false)}
+        domainId={domain.id}
+        currentName={domain.name}
+        onRenamed={(newName) => {
+          if (onRenamed) onRenamed(domain.id, newName);
+        }}
+      />
+
+      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
@@ -144,7 +195,7 @@ export default function DomainCard({ domain, onDeleted }: DomainCardProps) {
               type="button"
               onClick={handleConfirmDelete}
               disabled={deleting}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white shadow-lg shadow-rose-600/20 transition-all hover:scale-105"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white shadow-lg transition-colors"
             >
               {deleting ? (
                 <>
@@ -152,10 +203,7 @@ export default function DomainCard({ domain, onDeleted }: DomainCardProps) {
                   <span>Deleting...</span>
                 </>
               ) : (
-                <>
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete Workspace</span>
-                </>
+                <span>Delete Permanently</span>
               )}
             </button>
           </div>

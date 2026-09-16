@@ -19,8 +19,8 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     notFound();
   }
 
-  // All domains for top switcher
-  const allDomains = db.prepare('SELECT id, name, icon FROM domains ORDER BY sort_order ASC').all() as any[];
+  // All active domains for top switcher
+  const allDomains = db.prepare('SELECT id, name, icon, is_archived FROM domains WHERE COALESCE(is_archived, 0) = 0 ORDER BY sort_order ASC').all() as any[];
 
   // Daily picks (3-5 randomized from curated manual library)
   const dailyVideos = db.prepare(`

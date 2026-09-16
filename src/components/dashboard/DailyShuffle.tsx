@@ -43,12 +43,13 @@ export default function DailyShuffle({
   };
 
   return (
-    <div className="relative p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-950/20 via-zinc-900/40 to-violet-950/20 border border-indigo-500/20 mb-10 shadow-lg">
+    <div className="relative p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-indigo-950/20 via-zinc-900/40 to-violet-950/20 border border-indigo-500/20 mb-8 shadow-lg">
       <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
         <Sparkles className="w-3.5 h-3.5" />
         <span>Combats Choice Fatigue</span>
       </div>
       <Shelf
+        className="mb-0"
         title="Pick for Today"
         subtitle="Randomized flow from your workspace library"
         icon={<Dices className="w-5 h-5 text-indigo-400" />}
