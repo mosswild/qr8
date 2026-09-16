@@ -144,27 +144,26 @@ export default function WorkspaceDeck({
     <div className="min-h-screen bg-[#090a0f] text-zinc-100 flex flex-col">
       {/* Workspace Sticky Navigation Header */}
       <header className="border-b border-zinc-900 bg-[#0c0e17]/90 backdrop-blur-md sticky top-0 z-30 pt-safe px-safe">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link
               href="/"
-              className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors shrink-0"
               title="Return to Launcher Hub"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
 
             {/* Workspace Title & Dropdown Switcher */}
-            <div className="relative">
+            <div className="relative min-w-0">
               <button
                 onClick={() => setIsDomainPickerOpen(!isDomainPickerOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800/80 border border-zinc-800 transition-colors"
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800/80 border border-zinc-800 transition-colors max-w-[170px] sm:max-w-xs"
               >
-                <span className="text-xl">{domain.icon || '📁'}</span>
-                <span className="font-bold text-sm sm:text-base text-white tracking-tight">
+                <span className="font-bold text-sm sm:text-base text-white tracking-tight truncate">
                   {domain.name}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
               </button>
 
               {isDomainPickerOpen && (
@@ -182,13 +181,12 @@ export default function WorkspaceDeck({
                         key={d.id}
                         href={`/w/${d.id}`}
                         onClick={() => setIsDomainPickerOpen(false)}
-                        className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-colors ${
+                        className={`flex items-center px-2.5 py-2 rounded-xl transition-colors ${
                           d.id === domain.id
                             ? 'bg-indigo-600/30 text-indigo-200 font-semibold'
                             : 'hover:bg-zinc-800 text-zinc-300'
                         }`}
                       >
-                        <span className="text-base">{d.icon || '📁'}</span>
                         <span className="truncate">{d.name}</span>
                       </Link>
                     ))}
@@ -218,14 +216,14 @@ export default function WorkspaceDeck({
           </div>
 
           {/* Action Bar */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Creator RSS button */}
             <button
               onClick={() => setIsCreatorsOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
               title="Manage YouTube Creators"
             >
-              <Rss className="w-3.5 h-3.5 text-indigo-400" />
+              <Rss className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-indigo-400" />
               <span className="hidden md:inline">Creators</span>
               {creatorCount > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full bg-indigo-950 text-indigo-300 text-[10px] font-bold border border-indigo-500/30">
@@ -244,10 +242,10 @@ export default function WorkspaceDeck({
               <span>Playlist</span>
             </button>
 
-            {/* Persistent Quick-Add button */}
+            {/* Persistent Quick-Add button (desktop only; mobile has bottom-right FAB) */}
             <button
               onClick={() => setIsQuickAddOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-lg shadow-indigo-600/20 transition-all hover:scale-105"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-lg shadow-indigo-600/20 transition-all hover:scale-105"
             >
               <Plus className="w-4 h-4" />
               <span>Quick Add</span>

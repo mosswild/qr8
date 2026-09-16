@@ -43,23 +43,29 @@ export default function Shelf({
   return (
     <section className="mb-10 group/shelf">
       {/* Shelf Header */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <div className="flex items-center gap-2.5">
-          {icon && <div className="text-zinc-400">{icon}</div>}
-          <div>
-            <h3 className="text-lg font-semibold text-white tracking-tight flex items-center gap-2">
-              <span>{title}</span>
+      <div className="flex items-start sm:items-center justify-between gap-3 mb-4 px-1">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          {icon && <div className="text-zinc-400 shrink-0">{icon}</div>}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-white tracking-tight truncate">
+                {title}
+              </h3>
               {videos.length > 0 && (
-                <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-400">
+                <span className="shrink-0 text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-800/90 text-zinc-400 border border-zinc-700/50">
                   {videos.length}
                 </span>
               )}
-            </h3>
-            {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
+            </div>
+            {subtitle && (
+              <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1 sm:line-clamp-none">
+                {subtitle}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="shrink-0 flex items-center gap-2">
           {actionButton}
           {videos.length > 2 && (
             <div className="hidden sm:flex items-center gap-1 ml-2">

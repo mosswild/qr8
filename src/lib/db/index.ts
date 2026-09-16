@@ -54,13 +54,13 @@ function seedInitialData(db: Database.Database) {
 
   const seedTransaction = db.transaction(() => {
     // 1. Mobility & Yoga
-    insertDomain.run('yoga-mobility', 'Yoga & Mobility', '🧘', 0);
+    insertDomain.run('yoga-mobility', 'Yoga & Mobility', '', 0);
 
     // 2. Strength & Conditioning
-    insertDomain.run('strength-training', 'Strength & Calisthenics', '⚡', 1);
+    insertDomain.run('strength-training', 'Strength & Calisthenics', '', 1);
 
     // 3. Culinary Craft
-    insertDomain.run('culinary-craft', 'Culinary Techniques', '🍳', 2);
+    insertDomain.run('culinary-craft', 'Culinary Techniques', '', 2);
 
     // Seed sample videos for Yoga & Mobility
     const yogaVideos = [

@@ -11,15 +11,12 @@ interface CreateDomainModalProps {
   onCreated: () => void;
 }
 
-const DEFAULT_EMOJIS = ['🧘', '⚡', '🍳', '🎸', '🏃', '🥋', '📚', '🎨', '💻', '🪴', '🛠️', '🎯'];
-
 export default function CreateDomainModal({
   isOpen,
   onClose,
   onCreated,
 }: CreateDomainModalProps) {
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState('🧘');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +31,7 @@ export default function CreateDomainModal({
       const res = await apiFetch('/api/domains', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), icon }),
+        body: JSON.stringify({ name: name.trim(), icon: '' }),
       });
 
       if (!res.ok) {
@@ -68,28 +65,6 @@ export default function CreateDomainModal({
             className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700/70 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-all"
             autoFocus
           />
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-zinc-300 mb-2">
-            Select Workspace Icon
-          </label>
-          <div className="grid grid-cols-6 gap-2">
-            {DEFAULT_EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                type="button"
-                onClick={() => setIcon(emoji)}
-                className={`h-11 rounded-xl text-xl flex items-center justify-center border transition-all ${
-                  icon === emoji
-                    ? 'bg-indigo-600/30 border-indigo-500 scale-105 shadow'
-                    : 'bg-zinc-900/60 border-zinc-800 hover:bg-zinc-800'
-                }`}
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
         </div>
 
         {error && (

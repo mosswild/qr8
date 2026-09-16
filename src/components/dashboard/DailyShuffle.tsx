@@ -49,8 +49,8 @@ export default function DailyShuffle({
         <span>Combats Choice Fatigue</span>
       </div>
       <Shelf
-        title="Pick for Today (Daily Shuffle)"
-        subtitle="Randomized flow curated from your workspace library"
+        title="Pick for Today"
+        subtitle="Randomized flow from your workspace library"
         icon={<Dices className="w-5 h-5 text-indigo-400" />}
         videos={videos}
         domainId={domainId}
@@ -64,7 +64,7 @@ export default function DailyShuffle({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-xs font-medium text-indigo-200 hover:text-white transition-all disabled:opacity-50"
           >
             <Dices className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>{loading ? 'Rolling...' : 'Reroll Picks'}</span>
+            <span>{loading ? 'Rolling...' : 'Reroll'}</span>
           </button>
         }
       />

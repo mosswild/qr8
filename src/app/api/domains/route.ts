@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     db.prepare(`
       INSERT INTO domains (id, name, icon, sort_order)
       VALUES (?, ?, ?, ?)
-    `).run(slug, name.trim(), icon || '📁', sortOrder);
+    `).run(slug, name.trim(), icon || '', sortOrder);
 
     const created = db.prepare('SELECT * FROM domains WHERE id = ?').get(slug);
     return NextResponse.json({ domain: created }, { status: 201 });
