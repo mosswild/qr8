@@ -369,47 +369,48 @@ export default function YouTubePlayer({
   }, [video.youtube_id]);
 
   return (
-    <div className="min-h-screen bg-[#06070a] flex flex-col text-zinc-100">
+    <div className="min-h-screen bg-[#06070a] flex flex-col text-zinc-100 w-full max-w-full overflow-x-hidden">
       {/* Distraction-Free Header Bar */}
-      <header className="border-b border-zinc-900 bg-[#0a0c13]/90 backdrop-blur-md sticky top-0 z-30 pt-safe px-safe">
-        <div className="h-14 px-4 sm:px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="border-b border-zinc-900 bg-[#0a0c13]/90 backdrop-blur-md sticky top-0 z-30 pt-safe px-safe w-full max-w-full overflow-hidden">
+        <div className="h-14 px-3 sm:px-6 flex items-center justify-between gap-2 max-w-7xl mx-auto w-full">
+          <div className="flex items-center gap-2 min-w-0 flex-shrink mr-1">
           <Link
             href={`/w/${domainId}`}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            className="flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex-shrink-0"
+            title={`Back to ${domainName}`}
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Back to {domainName}</span>
           </Link>
-          <span className="text-zinc-700 hidden sm:inline">|</span>
-          <span className="text-xs text-zinc-400 truncate max-w-[180px] sm:max-w-xs md:max-w-md">
+          <span className="text-zinc-700 hidden sm:inline flex-shrink-0">|</span>
+          <span className="text-xs text-zinc-400 truncate max-w-[90px] xs:max-w-[130px] sm:max-w-xs md:max-w-md">
             {video.title}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Add to Library button if not yet curated */}
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          {/* Add to Library button if not yet curated (desktop header) */}
           {!isCurated ? (
             <button
               onClick={handleCurate}
               disabled={isCurating}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all hover:scale-105"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all hover:scale-105"
               title="Add this routine to your Workspace Library"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{isCurating ? 'Adding...' : 'Add to Library'}</span>
             </button>
           ) : (
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
               <Check className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden md:inline">In Library</span>
+              <span>In Library</span>
             </div>
           )}
 
-          {/* Smart TV / Casting button */}
+          {/* Smart TV / Casting button (hidden on mobile header, available in footer) */}
           <button
             onClick={() => setIsCastModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-zinc-900/80 border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white transition-colors"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border bg-zinc-900/80 border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white transition-colors"
             title="Cast to Smart TV / Apple TV"
           >
             <Tv className="w-3.5 h-3.5 text-indigo-400" />
@@ -420,14 +421,15 @@ export default function YouTubePlayer({
           {hasPlaylist && (
             <button
               onClick={() => setIsQueueOpen(!isQueueOpen)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                 isQueueOpen
                   ? 'bg-violet-950/50 border-violet-500/50 text-violet-300 shadow-sm'
                   : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
               }`}
+              title="Toggle Playlist Queue"
             >
-              <Layers className="w-3.5 h-3.5 text-violet-400" />
-              <span>Queue ({activePlaylistIndex >= 0 ? activePlaylistIndex + 1 : 1}/{queueVideos.length})</span>
+              <Layers className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
+              <span><span className="hidden xs:inline">Queue </span>({activePlaylistIndex >= 0 ? activePlaylistIndex + 1 : 1}/{queueVideos.length})</span>
             </button>
           )}
 
@@ -491,17 +493,17 @@ export default function YouTubePlayer({
             <span>{completionCount}x</span>
           </div>
 
-          {/* Notes Toggle */}
+          {/* Notes Toggle (hidden on mobile header, available in footer) */}
           <button
             onClick={() => setIsNotesOpen(!isNotesOpen)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
               isNotesOpen || notes.length > 0
                 ? 'bg-indigo-950/40 border-indigo-500/40 text-indigo-300'
                 : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Notes</span>
+            <span>Notes</span>
             {isNotesOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
 
@@ -509,7 +511,7 @@ export default function YouTubePlayer({
           {nextVideo && (
             <Link
               href={`/w/${domainId}/player?v=${nextVideo.youtube_id}${playlistId ? `&playlist=${playlistId}` : ''}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow transition-colors flex-shrink-0"
               title={isPlaylistLooping ? 'Loop back to beginning' : 'Next routine in playlist'}
             >
               <span>{isPlaylistLooping ? 'Loop' : 'Next'}</span>
@@ -521,7 +523,7 @@ export default function YouTubePlayer({
       </header>
 
       {/* Main Focus Stage & Playlist Queue Sidebar */}
-      <main className="flex-1 max-w-7xl mx-auto w-full p-2 sm:p-6 md:p-8 flex flex-col lg:flex-row gap-6 items-start justify-center">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-2 sm:p-6 md:p-8 flex flex-col lg:flex-row gap-6 items-start justify-center overflow-x-hidden">
         {/* Cinema Video Player Area */}
         <div className="flex-1 w-full flex flex-col items-center">
           {/* Cinema Container */}
@@ -592,8 +594,8 @@ export default function YouTubePlayer({
           )}
 
           {/* Minimal Clean Metadata Footer */}
-          <div className="w-full mt-4 flex items-center justify-between text-xs text-zinc-500 px-1">
-            <div className="flex items-center gap-3">
+          <div className="w-full mt-4 flex flex-wrap items-center justify-between gap-y-2 gap-x-3 text-xs text-zinc-500 px-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
               <span className="font-medium text-zinc-300">{video.channel_name}</span>
               <span>•</span>
               <button
@@ -603,6 +605,29 @@ export default function YouTubePlayer({
                 <Maximize2 className="w-3 h-3" />
                 <span>Theater Mode</span>
               </button>
+
+              {/* Mobile Quick Action: Notes */}
+              <span className="sm:hidden">•</span>
+              <button
+                onClick={() => setIsNotesOpen(!isNotesOpen)}
+                className={`sm:hidden inline-flex items-center gap-1 transition-colors ${
+                  isNotesOpen || notes.length > 0 ? 'text-indigo-300 font-medium' : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <FileText className="w-3 h-3 text-indigo-400" />
+                <span>Notes{notes.length > 0 ? ' (1)' : ''}</span>
+              </button>
+
+              {/* Mobile Quick Action: Cast */}
+              <span className="sm:hidden">•</span>
+              <button
+                onClick={() => setIsCastModalOpen(true)}
+                className="sm:hidden inline-flex items-center gap-1 text-zinc-400 hover:text-indigo-300 transition-colors"
+              >
+                <Tv className="w-3 h-3 text-indigo-400" />
+                <span>Cast</span>
+              </button>
+
               {playlistId && (
                 <>
                   <span>•</span>
@@ -625,7 +650,7 @@ export default function YouTubePlayer({
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/30 text-emerald-300 hover:text-emerald-200 text-xs font-semibold transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>{isCurating ? 'Adding...' : '+ Add to Workspace Library'}</span>
+                    <span>{isCurating ? 'Adding...' : '+ Add to Workspace'}</span>
                   </button>
                 </>
               )}
@@ -634,7 +659,7 @@ export default function YouTubePlayer({
               href={`https://www.youtube.com/watch?v=${video.youtube_id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="flex items-center gap-1 text-zinc-500 hover:text-zinc-300 transition-colors flex-shrink-0"
             >
               <span>YouTube Source</span>
               <ExternalLink className="w-3 h-3" />
