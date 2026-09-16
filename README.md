@@ -5,25 +5,74 @@
 <h1 align="center">QR8 (Curate)</h1>
 
 <p align="center">
-  <strong>Distraction-Free, Self-Hosted Video Curator for Focused Routines & Practices</strong>
+  <strong>Distraction-Free, Self-Hosted Video Curator for Focused Workspaces & Practice</strong>
 </p>
 
-QR8 (pronounced **"Curate"**) is a lightweight, self-hostable web application designed for people who use YouTube videos for physical routines, skills development, and daily practices (e.g. Yoga, Mobility, Calisthenics, Cooking Techniques) without being derailed by algorithmic rabbit holes, recommended feeds, or comment sections.
+QR8 (pronounced **"Curate"**) is a lightweight, self-hostable web application designed for people who use YouTube videos for physical routines, skills development, and daily practices (e.g. Yoga, Mobility, Calisthenics, Music, Cooking Techniques) without being derailed by algorithmic rabbit holes, recommended feeds, or comment sections.
 
 QR8 acts strictly as a **curated link lens**. It never downloads or hosts media files, running on a single container with a local SQLite database.
+
+<p align="center">
+  <img src="docs/images/distraction-free-player.png" alt="QR8 Distraction-Free Cinema Player" width="100%" />
+</p>
 
 ---
 
 ## Key Features
 
-- 🧘 **Workspaces ("Interests / Domains"):** Create isolated collections (e.g., "Yoga & Mobility", "Strength", "Culinary") with custom emoji icons.
-- 🎲 **Daily Shuffle ("Pick for Today"):** Generates 3–5 randomized items from the active workspace library with an instant "Reroll" action to combat choice fatigue.
-- 📡 **Key-Free Creator RSS Feeds:** Ingest and subscribe to YouTube creators using public Atom feeds (`https://www.youtube.com/feeds/videos.xml?channel_id=...`) with no Google Cloud API keys.
-- ⚡ **Zero-Token Metadata Resolution:** Paste any YouTube video link (`watch?v=`, `youtu.be/`, `/shorts/`) or `@creator` handle; metadata and thumbnails are resolved using the public YouTube oEmbed endpoint.
-- 🎬 **Dedicated Distraction-Free Player:** Official YouTube IFrame player configured with `modestbranding=1`, `rel=0` (no random algorithmic recommendations), and `iv_load_policy=3`.
-- 📈 **Practice & Completion Tracking:** Automatically listens to player state to track `last_played_at` and increment `completion_count` upon finishing a routine.
-- 📝 **Routine Cues & Notes Drawer:** Save form reminders, cues, and breathing notes tied directly to individual routines.
-- 🐳 **Single Container Deployment:** Packaged with `better-sqlite3` in WAL mode and volume mounting (`./data:/data`) for zero-maintenance self-hosting.
+### 🗂️ Workspaces Portal
+Create isolated workspaces (e.g., "Yoga & Mobility", "Strength & Calisthenics", "Culinary Arts") to keep separate disciplines completely partitioned. Cards feature dynamic blended video thumbnails, live video and creator counts, and quick management actions (Rename, Archive, Delete).
+
+<p align="center">
+  <img src="docs/images/workspace-portal.png" alt="QR8 Workspaces Portal" width="100%" />
+</p>
+
+- **Isolated Collections:** Partition your practices without cross-topic clutter.
+- **Dynamic Card Art:** Automatically selects video thumbnails from each workspace for a sleek, modern visual aesthetic.
+- **Workspace Archiving:** Temporarily stash workspaces in the Archive tab to declutter your active hub without deleting saved videos or subscriptions.
+- **Quick Switcher:** Switch between workspaces from any page with a single click.
+
+---
+
+### 🎲 "Pick for Today" (Combats Choice Fatigue)
+Eliminate decision paralysis when starting a session. QR8 picks a randomized selection from your curated workspace library with a single click.
+
+<p align="center">
+  <img src="docs/images/pick-for-today.png" alt="Pick for Today Feature" width="100%" />
+</p>
+
+- **Instant Reroll:** Shuffle another set of videos in milliseconds.
+- **Play & Completion Counters:** Quickly see how many times you've completed a video and when it was last played.
+- **Quick Player Launch:** Launch directly into distraction-free player mode from any card.
+
+---
+
+### 📑 Curated Playlists & Creator Inboxes
+Organize multi-part courses, progressive routines, or favorite collections into structured decks. Subscribe directly to creators with zero Google API keys.
+
+<p align="center">
+  <img src="docs/images/curated-playlists-and-feed.png" alt="Curated Playlists and Creator RSS Feed" width="100%" />
+</p>
+
+- **Stacked Playlist Decks:** Visual stacked card decks showing total queued videos and starting routines.
+- **Key-Free Creator RSS Feeds:** Ingest and track YouTube channels via public Atom feeds (`/feeds/videos.xml?channel_id=...`).
+- **Selective Curation Inbox:** Subscribed uploads land safely in your "What's New" feed inbox until you choose to curate them into your permanent library.
+- **Zero-Token Metadata Resolution:** Paste any YouTube video link (`watch?v=`, `youtu.be/`, `/shorts/`) or `@creator` handle; metadata and thumbnails resolve instantly via public oEmbed.
+
+---
+
+### 🎬 Distraction-Free Cinema Player & Queue
+An uncluttered, focused playback stage powered by YouTube's official player with algorithmic recommendations (`rel=0`), annotations, and branding stripped away.
+
+<p align="center">
+  <img src="docs/images/distraction-free-player.png" alt="Distraction-Free Video Player and Queue" width="100%" />
+</p>
+
+- **Interactive Queue Sidebar:** Track upcoming videos in the playlist, jump directly to any queued video, or reorder sequences.
+- **Shuffle & Loop Controls:** Built-in playlist shuffle and multi-mode loop toggles (Loop Playlist, Loop Single Video, Loop Off).
+- **Smart TV & AirPlay Support:** Native casting prompts to stream sessions to Apple TV, Chromecast, or Smart TVs.
+- **Personal Notes & Timestamp Cues:** Save form reminders, breathing cues, and adjustments stored per routine.
+- **Automatic Completion Tracking:** Records session timestamps and increments completion counters automatically when videos finish.
 
 ---
 
@@ -87,6 +136,8 @@ qr8/
 ├── docker-compose.yml          # Standalone service with ./data persistence
 ├── test-runner.js              # Unit tests for URL and RSS parsing
 ├── data/                       # Volume mount directory for qr8.db
+├── docs/
+│   └── images/                 # Screenshot assets
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx            # Top-Level Hub (Workspaces)
@@ -97,7 +148,7 @@ qr8/
 │   │   └── api/
 │   │       ├── ingest/route.ts # oEmbed and channel resolver
 │   │       ├── rss/sync/route.ts# RSS feed synchronization
-│   │       ├── domains/route.ts# Workspace CRUD
+│   │       ├── domains/route.ts# Workspace CRUD & archive
 │   │       ├── videos/route.ts # Video mutations & completion tracking
 │   │       └── playlists/route.ts # Curated sub-groupings
 │   ├── lib/
@@ -131,30 +182,12 @@ qr8/
 
 ## Roadmap
 
-- 🎯 **Ultra-Minimal Opening Portal:**
-  - Remove the top hero banner block (*"Curated Video Hubs without Algorithmic Clutter"*) so the home portal focuses directly on workspace cards.
-- 🧼 **Header Decluttering:**
-  - Remove the *"Zero Algorithm Drift"* badge from the header navigation bar for a cleaner, distraction-free aesthetic.
 - 📑 **YouTube Playlist Ingestion:**
   - Support pasting full YouTube playlist URLs (`playlist?list=PL...`) into Quick Add to batch-ingest all videos and automatically generate a corresponding workspace playlist in the app.
-- 🗂️ **Unified Playlists Shelf & Stacked Player Deck:**
-  - Consolidate playlists into a single horizontal shelf where each playlist appears as a visually "stacked" video card deck.
-  - When opened, load the player with a dedicated right-hand queue sidebar to play videos sequentially or jump directly to any queued routine.
-- 📥 **Creator Subscriptions Isolation & Selective Curation:**
-  - Prevent raw channel subscriptions from auto-flooding the permanent "Workspace Library" or "Daily Shuffle"; subscribed uploads will only appear in the "What's New" inbox carousel until the user explicitly chooses to add them to their curated library.
-- 🎨 **Logo & Brand Typography Correction:**
-  - Update the square icon badge in the header from "Q8" to "QR8" to properly reflect the app name.
-- 📺 **Smart TV & Apple TV Streaming:**
-  - Dedicated AirPlay and Google Cast / Chromecast triggers integrated directly into player controls.
-  - "Companion / Remote Display" mode to control workout playback and view cues from a mobile device while displaying full-screen on a television.
-- 🖼️ **Dynamic Workspace Thumbnails & Blended Cards:**
-  - Replace static emoji icons on workspace cards with blended thumbnails pulled dynamically from a random video within each workspace.
-- 🎴 **Workspace Card Action Streamlining:**
-  - Remove redundant "Enter Workspace" text from workspace cards, making the entire card a clean, direct click target.
-- 🏷️ **Nomenclature & Terminology Standardization:**
-  - Standardize consistently on "Workspaces" across all UI copy, portal screens, and documentation to resolve inconsistent use of "domains".
-- 📑 **Workspace Shelf Layout Reordering:**
-  - Position curated Playlists prominently above the "What's New" carousel within each workspace dashboard.
+- 📱 **Companion / Remote Display Mode:**
+  - Control workout playback and view cues from a mobile device while displaying full-screen on a television or external monitor.
+- 🏷️ **Tagging & Duration Filtering:**
+  - Filter curated library items by duration (e.g. `< 15 min`, `15–30 min`, `30+ min`) or user-defined activity tags.
 
 ---
 
