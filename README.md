@@ -1,4 +1,8 @@
-# QR8 (Curate)
+<p align="center">
+  <img src="public/icon.png" width="128" height="128" alt="QR8 Icon" style="border-radius: 26px;" />
+</p>
+
+<h1 align="center">QR8 (Curate)</h1>
 
 <p align="center">
   <strong>Distraction-Free, Self-Hosted Video Curator for Focused Routines & Practices</strong>
@@ -46,7 +50,7 @@ Access the web interface at **`http://localhost:3000`**. All SQLite data is pers
 
 ```bash
 # Clone the repository
-git clone https://github.com/cfaber/qr8.git
+git clone https://github.com/mosswild/qr8.git
 cd qr8
 
 # Install dependencies

@@ -17,7 +17,7 @@ export async function fetchChannelRssFeed(channelId: string): Promise<{
   const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
   const response = await fetch(feedUrl, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; QR8/1.0; +https://github.com/qr8)',
+      'User-Agent': 'Mozilla/5.0 (compatible; QR8/1.0; +https://github.com/mosswild/qr8)',
       Accept: 'application/atom+xml, application/xml, text/xml',
     },
     cache: 'no-store',
@@ -77,7 +77,7 @@ export async function fetchPlaylistRssFeed(playlistId: string): Promise<{
   const feedUrl = `https://www.youtube.com/feeds/videos.xml?playlist_id=${playlistId}`;
   const response = await fetch(feedUrl, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; QR8/1.0; +https://github.com/qr8)',
+      'User-Agent': 'Mozilla/5.0 (compatible; QR8/1.0; +https://github.com/mosswild/qr8)',
       Accept: 'application/atom+xml, application/xml, text/xml',
     },
     cache: 'no-store',
