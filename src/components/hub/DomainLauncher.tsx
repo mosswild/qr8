@@ -33,11 +33,11 @@ export default function DomainLauncher({ initialDomains }: DomainLauncherProps) 
   return (
     <div className="min-h-screen bg-[#090a0f] text-zinc-100 flex flex-col">
       {/* Top Header */}
-      <header className="border-b border-zinc-900 bg-[#0c0e17]/80 backdrop-blur-md sticky top-0 z-20">
+      <header className="border-b border-zinc-900 bg-[#0c0e17]/80 backdrop-blur-md sticky top-0 z-20 pt-safe px-safe">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
-              src="/icon.png"
+              src="/qr8/icon.png"
               alt="QR8 Icon"
               className="w-10 h-10 rounded-xl shadow-lg shadow-indigo-500/20 object-cover border border-white/10"
             />

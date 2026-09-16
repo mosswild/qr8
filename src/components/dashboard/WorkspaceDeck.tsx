@@ -122,7 +122,7 @@ export default function WorkspaceDeck({
   return (
     <div className="min-h-screen bg-[#090a0f] text-zinc-100 flex flex-col">
       {/* Workspace Sticky Navigation Header */}
-      <header className="border-b border-zinc-900 bg-[#0c0e17]/90 backdrop-blur-md sticky top-0 z-30">
+      <header className="border-b border-zinc-900 bg-[#0c0e17]/90 backdrop-blur-md sticky top-0 z-30 pt-safe px-safe">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link

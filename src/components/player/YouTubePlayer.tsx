@@ -293,8 +293,9 @@ export default function YouTubePlayer({
   return (
     <div className="min-h-screen bg-[#06070a] flex flex-col text-zinc-100">
       {/* Distraction-Free Header Bar */}
-      <header className="h-14 border-b border-zinc-900 px-4 sm:px-6 flex items-center justify-between bg-[#0a0c13]/90 backdrop-blur-md sticky top-0 z-30">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-zinc-900 bg-[#0a0c13]/90 backdrop-blur-md sticky top-0 z-30 pt-safe px-safe">
+        <div className="h-14 px-4 sm:px-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
           <Link
             href={`/w/${domainId}`}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
@@ -390,6 +391,7 @@ export default function YouTubePlayer({
               <SkipForward className="w-3.5 h-3.5" />
             </Link>
           )}
+        </div>
         </div>
       </header>
 
