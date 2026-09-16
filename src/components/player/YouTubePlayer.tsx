@@ -395,7 +395,7 @@ export default function YouTubePlayer({
               onClick={handleCurate}
               disabled={isCurating}
               className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all hover:scale-105"
-              title="Add this routine to your Workspace Library"
+              title="Add this video to your Workspace Library"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{isCurating ? 'Adding...' : 'Add to Library'}</span>
@@ -512,7 +512,7 @@ export default function YouTubePlayer({
             <Link
               href={`/w/${domainId}/player?v=${nextVideo.youtube_id}${playlistId ? `&playlist=${playlistId}` : ''}`}
               className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow transition-colors flex-shrink-0"
-              title={isPlaylistLooping ? 'Loop back to beginning' : 'Next routine in playlist'}
+              title={isPlaylistLooping ? 'Loop back to beginning' : 'Next video in playlist'}
             >
               <span>{isPlaylistLooping ? 'Loop' : 'Next'}</span>
               <SkipForward className="w-3.5 h-3.5" />
@@ -539,7 +539,7 @@ export default function YouTubePlayer({
                 <div className="bg-black/90 backdrop-blur-md border border-violet-500/50 p-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in fade-in">
                   <div>
                     <p className="text-xs text-violet-300 font-semibold">
-                      {isPlaylistLooping ? 'Playlist Complete • Looping to Start' : 'Routine Complete!'}
+                      {isPlaylistLooping ? 'Playlist Complete • Looping to Start' : 'Video Complete!'}
                     </p>
                     <p className="text-sm font-bold text-white line-clamp-1 max-w-xs">
                       Up Next: {nextVideo.title}
@@ -557,13 +557,13 @@ export default function YouTubePlayer({
             )}
           </div>
 
-          {/* Collapsible Routine Cues & Notes Drawer */}
+          {/* Collapsible Video Cues & Notes Drawer */}
           {isNotesOpen && (
             <div className="w-full mt-4 p-4 rounded-2xl bg-[#0e101a] border border-zinc-800 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Personal Routine Cues & Form Notes</span>
+                  <span>Personal Notes & Timestamp Cues</span>
                 </h4>
                 <button
                   onClick={handleSaveNotes}

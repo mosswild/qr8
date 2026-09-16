@@ -149,7 +149,7 @@ export default function AddToPlaylistModal({
 
       if (res.ok) {
         const createdName = newPlaylistName.trim();
-        setSuccessMessage(`Created "${createdName}" and added routine`);
+        setSuccessMessage(`Created "${createdName}" and added video`);
         setNewPlaylistName('');
         await fetchPlaylists();
         if (onSuccess) onSuccess();
@@ -227,7 +227,7 @@ export default function AddToPlaylistModal({
                           {pl.name}
                         </p>
                         <p className="text-[10px] text-zinc-500">
-                          {pl.videos.length} {pl.videos.length === 1 ? 'routine' : 'routines'}
+                          {pl.videos.length} {pl.videos.length === 1 ? 'video' : 'videos'}
                         </p>
                       </div>
                     </div>

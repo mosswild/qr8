@@ -69,7 +69,7 @@ export default function CreatePlaylistModal({
           </label>
           <input
             type="text"
-            placeholder="e.g. 15-Min Mobility Routine"
+            placeholder="e.g. Favorites / Daily Focus"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={loading}

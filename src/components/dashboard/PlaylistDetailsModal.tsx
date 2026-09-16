@@ -73,9 +73,9 @@ export default function PlaylistDetailsModal({
               <Layers className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-white">Curated Routine Sequence</p>
+              <p className="text-xs font-semibold text-white">Curated Playlist Sequence</p>
               <p className="text-[11px] text-zinc-400">
-                {videos.length} {videos.length === 1 ? 'routine' : 'routines'} queued
+                {videos.length} {videos.length === 1 ? 'video' : 'videos'} queued
               </p>
             </div>
           </div>
@@ -103,7 +103,7 @@ export default function PlaylistDetailsModal({
         {/* Videos List */}
         <div>
           <label className="block text-xs font-medium text-zinc-400 mb-2">
-            Routines in this playlist
+            Videos in this playlist
           </label>
 
           {videos.length === 0 ? (
@@ -111,7 +111,7 @@ export default function PlaylistDetailsModal({
               <Film className="w-8 h-8 opacity-40 mx-auto mb-1.5" />
               <p>This playlist is empty.</p>
               <p className="text-[11px] text-zinc-600 mt-1">
-                Add routines using the &quot;...&quot; menu on any video card.
+                Add videos using the &quot;...&quot; menu on any video card.
               </p>
             </div>
           ) : (
@@ -145,7 +145,7 @@ export default function PlaylistDetailsModal({
                       href={`/w/${domainId}/player?v=${vid.youtube_id}&playlist=${playlist.id}`}
                       onClick={onClose}
                       className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-                      title="Play this routine"
+                      title="Play this video"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
                     </Link>

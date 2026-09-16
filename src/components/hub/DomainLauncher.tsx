@@ -105,7 +105,7 @@ export default function DomainLauncher({
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400 hidden sm:block">
-                Distraction-Free Video Routines
+                Distraction-Free Video Workspaces
               </p>
             </div>
           </div>

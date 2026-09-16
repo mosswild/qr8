@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'QR8 | Distraction-Free Video Curator',
     short_name: 'QR8',
-    description: 'Self-hosted distraction-free video routines, curated decks, and focused practice feeds.',
+    description: 'Self-hosted distraction-free video workspaces, curated playlists, and focused viewing feeds.',
     start_url: '/qr8',
     display: 'standalone',
     background_color: '#090a0f',

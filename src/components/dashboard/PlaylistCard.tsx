@@ -100,7 +100,7 @@ export default function PlaylistCard({ playlist, domainId, onDeleted, onUpdated 
           {/* Stacked Deck Item Count Badge */}
           <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md border border-violet-500/30 text-violet-300 text-xs font-semibold shadow-lg">
             <Layers className="w-3.5 h-3.5 text-violet-400" />
-            <span>{videoCount} {videoCount === 1 ? 'routine' : 'routines'}</span>
+            <span>{videoCount} {videoCount === 1 ? 'video' : 'videos'}</span>
           </div>
 
           {/* Delete Button */}
@@ -125,7 +125,7 @@ export default function PlaylistCard({ playlist, domainId, onDeleted, onUpdated 
               </h4>
             </Link>
             <p className="text-xs text-zinc-400 mt-1 line-clamp-1">
-              {firstVideo ? `Starts with: ${firstVideo.title}` : 'No routines queued'}
+              {firstVideo ? `Starts with: ${firstVideo.title}` : 'No videos queued'}
             </p>
           </div>
 
@@ -142,7 +142,7 @@ export default function PlaylistCard({ playlist, domainId, onDeleted, onUpdated 
             <button
               onClick={() => setIsDetailsOpen(true)}
               className="flex items-center gap-1 text-[11px] font-medium text-zinc-400 hover:text-white px-2 py-1 rounded-lg hover:bg-zinc-800/80 transition-colors"
-              title="View and remove routines in playlist"
+              title="View and remove videos in playlist"
             >
               <List className="w-3.5 h-3.5" />
               <span>Manage ({videoCount})</span>

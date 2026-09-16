@@ -142,7 +142,7 @@ export default function DomainCard({
         <div className="flex items-center gap-4 mt-2.5 text-xs text-zinc-400">
           <span className="flex items-center gap-1.5">
             <Film className="w-3.5 h-3.5 text-zinc-500" />
-            <span>{domain.video_count} {domain.video_count === 1 ? 'routine' : 'routines'}</span>
+            <span>{domain.video_count} {domain.video_count === 1 ? 'video' : 'videos'}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <Rss className="w-3.5 h-3.5 text-indigo-400" />
@@ -182,7 +182,7 @@ export default function DomainCard({
             <div className="text-xs text-rose-200">
               <p className="font-semibold text-sm text-white mb-1">Delete &quot;{domain.name}&quot;?</p>
               <p className="text-zinc-300">
-                This will permanently delete this workspace, including <strong>{domain.video_count} routine{domain.video_count === 1 ? '' : 's'}</strong> and <strong>{domain.creator_count} creator subscription{domain.creator_count === 1 ? '' : 's'}</strong>.
+                This will permanently delete this workspace, including <strong>{domain.video_count} video{domain.video_count === 1 ? '' : 's'}</strong> and <strong>{domain.creator_count} creator subscription{domain.creator_count === 1 ? '' : 's'}</strong>.
               </p>
             </div>
           </div>

@@ -319,7 +319,7 @@ export default function WorkspaceDeck({
                     </span>
                   </h3>
                   <p className="text-xs text-zinc-400 mt-0.5">
-                    Structured routine decks and multi-part practices
+                    Structured playlist sequences and multi-video collections
                   </p>
                 </div>
               </div>
@@ -370,12 +370,12 @@ export default function WorkspaceDeck({
 
         {/* 4. Recently Played / History */}
         <Shelf
-          title="Recently Practiced"
-          subtitle="Resume routines sorted chronologically by last session"
+          title="Recently Watched"
+          subtitle="Resume videos sorted chronologically by last session"
           icon={<History className="w-5 h-5 text-emerald-400" />}
           videos={recentVideos}
           domainId={domain.id}
-          emptyMessage="Your practice history will appear here once you complete or launch a video routine."
+          emptyMessage="Your watch history will appear here once you watch or complete a video."
           onVideoDeleted={handleVideoDeleted}
           onPlaylistUpdated={refreshWorkspaceData}
         />
@@ -383,11 +383,11 @@ export default function WorkspaceDeck({
         {/* 5. Complete Workspace Library */}
         <Shelf
           title="Workspace Library"
-          subtitle="All curated routines and instructional materials in this workspace"
+          subtitle="All curated videos and reference materials in this workspace"
           icon={<Sparkles className="w-5 h-5 text-amber-400" />}
           videos={allVideos}
           domainId={domain.id}
-          emptyMessage="Your workspace library is empty. Click '+ Quick Add' to paste your first routine or curate from 'What's New'."
+          emptyMessage="Your workspace library is empty. Click '+ Quick Add' to paste your first video or curate from 'What's New'."
           onVideoDeleted={handleVideoDeleted}
           onPlaylistUpdated={refreshWorkspaceData}
         />
@@ -449,7 +449,7 @@ export default function WorkspaceDeck({
             <div className="text-xs text-rose-200">
               <p className="font-semibold text-sm text-white mb-1">Delete &quot;{domainName}&quot;?</p>
               <p className="text-zinc-300">
-                This will permanently remove this workspace along with all its curated routines, playlists, and creator subscriptions.
+                This will permanently remove this workspace along with all its curated videos, playlists, and creator subscriptions.
               </p>
             </div>
           </div>

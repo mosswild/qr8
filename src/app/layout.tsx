@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'QR8 | Distraction-Free Video Curator',
-  description: 'Self-hosted distraction-free video routines, curated decks, and focused practice feeds.',
+  description: 'Self-hosted distraction-free video workspaces, curated playlists, and focused viewing feeds.',
   applicationName: 'QR8',
   appleWebApp: {
     capable: true,
