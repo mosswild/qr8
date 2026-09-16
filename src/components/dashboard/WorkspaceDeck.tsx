@@ -12,6 +12,9 @@ import {
   Sparkles,
   Layers,
   ChevronDown,
+  Trash2,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import Shelf from './Shelf';
 import DailyShuffle from './DailyShuffle';
@@ -20,6 +23,7 @@ import CreatorsModal from './CreatorsModal';
 import CreatePlaylistModal from './CreatePlaylistModal';
 import PlaylistCard, { PlaylistWithVideos } from './PlaylistCard';
 import { VideoItem } from './VideoCard';
+import Modal from '@/components/ui/Modal';
 import { apiFetch } from '@/lib/api';
 
 interface WorkspaceDeckProps {
@@ -60,6 +64,23 @@ export default function WorkspaceDeck({
   const [isCreatorsOpen, setIsCreatorsOpen] = useState(false);
   const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
   const [isDomainPickerOpen, setIsDomainPickerOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingWorkspace, setDeletingWorkspace] = useState(false);
+
+  const handleDeleteWorkspace = async () => {
+    setDeletingWorkspace(true);
+    try {
+      const res = await apiFetch(`/api/domains?id=${encodeURIComponent(domain.id)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        router.push('/');
+      }
+    } catch (err) {
+      console.error('Failed to delete workspace:', err);
+      setDeletingWorkspace(false);
+    }
+  };
 
   // Refresh data after mutations
   const refreshWorkspaceData = async () => {
@@ -171,13 +192,24 @@ export default function WorkspaceDeck({
                         <span className="truncate">{d.name}</span>
                       </Link>
                     ))}
-                    <div className="border-t border-zinc-800 mt-1 pt-1">
+                    <div className="border-t border-zinc-800/80 mt-1 pt-1 space-y-0.5">
                       <Link
                         href="/"
                         className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
                       >
+                        <Layers className="w-3.5 h-3.5" />
                         <span>Launcher Hub</span>
                       </Link>
+                      <button
+                        onClick={() => {
+                          setIsDomainPickerOpen(false);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition-colors text-left"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete &quot;{domain.name}&quot;</span>
+                      </button>
                     </div>
                   </div>
                 </>
@@ -219,6 +251,16 @@ export default function WorkspaceDeck({
             >
               <Plus className="w-4 h-4" />
               <span>Quick Add</span>
+            </button>
+
+            {/* Delete Workspace button */}
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-rose-500/50 text-zinc-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
+              title={`Delete workspace "${domain.name}"`}
+              aria-label="Delete workspace"
+            >
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -357,6 +399,55 @@ export default function WorkspaceDeck({
         availableVideos={allVideos}
         onPlaylistCreated={refreshWorkspaceData}
       />
+
+      {/* Delete Workspace Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete Workspace"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/30 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-rose-200">
+              <p className="font-semibold text-sm text-white mb-1">Delete &quot;{domain.name}&quot;?</p>
+              <p className="text-zinc-300">
+                This will permanently remove this workspace along with all its curated routines, playlists, and creator subscriptions.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2.5 pt-2">
+            <button
+              type="button"
+              onClick={() => setIsDeleteModalOpen(false)}
+              disabled={deletingWorkspace}
+              className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-300 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteWorkspace}
+              disabled={deletingWorkspace}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white shadow-lg shadow-rose-600/20 transition-all hover:scale-105"
+            >
+              {deletingWorkspace ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Workspace</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

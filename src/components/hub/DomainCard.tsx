@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Film, Rss, Trash2, Layers } from 'lucide-react';
+import { Film, Rss, Trash2, Layers, AlertTriangle, Loader2 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import Modal from '@/components/ui/Modal';
 
 export interface DomainItem {
   id: string;
@@ -22,21 +23,25 @@ interface DomainCardProps {
 
 export default function DomainCard({ domain, onDeleted }: DomainCardProps) {
   const [deleting, setDeleting] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleOpenConfirm = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm(`Are you sure you want to delete workspace "${domain.name}" and all its curated videos?`)) {
-      return;
-    }
+    setIsConfirmOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
     setDeleting(true);
     try {
       const res = await apiFetch(`/api/domains?id=${encodeURIComponent(domain.id)}`, {
         method: 'DELETE',
       });
-      if (res.ok && onDeleted) {
-        onDeleted(domain.id);
+      if (res.ok) {
+        setIsConfirmOpen(false);
+        if (onDeleted) {
+          onDeleted(domain.id);
+        }
       }
     } catch (err) {
       console.error('Failed to delete workspace:', err);
@@ -71,14 +76,15 @@ export default function DomainCard({ domain, onDeleted }: DomainCardProps) {
           </div>
         )}
 
-        {/* Delete Action Button */}
-        <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Delete Action Button: clearly accessible on touch/mobile and hover on desktop */}
+        <div className="absolute top-3 right-3 z-20 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           <button
-            onClick={handleDelete}
-            className="p-1.5 rounded-lg bg-black/60 backdrop-blur-md text-zinc-400 hover:text-rose-400 hover:bg-rose-950/70 border border-white/10 transition-colors shadow-md"
+            onClick={handleOpenConfirm}
+            className="p-2 rounded-xl bg-black/70 backdrop-blur-md text-zinc-400 hover:text-rose-400 hover:bg-rose-950/80 border border-white/10 transition-colors shadow-lg active:scale-95"
             title="Delete workspace"
+            aria-label="Delete workspace"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -106,6 +112,55 @@ export default function DomainCard({ domain, onDeleted }: DomainCardProps) {
         className="absolute inset-0 rounded-2xl z-10"
         aria-label={`Open workspace ${domain.name}`}
       />
+
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        title="Delete Workspace"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/30 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-rose-200">
+              <p className="font-semibold text-sm text-white mb-1">Delete &quot;{domain.name}&quot;?</p>
+              <p className="text-zinc-300">
+                This will permanently delete this workspace, including <strong>{domain.video_count} routine{domain.video_count === 1 ? '' : 's'}</strong> and <strong>{domain.creator_count} creator subscription{domain.creator_count === 1 ? '' : 's'}</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2.5 pt-2">
+            <button
+              type="button"
+              onClick={() => setIsConfirmOpen(false)}
+              disabled={deleting}
+              className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-300 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white shadow-lg shadow-rose-600/20 transition-all hover:scale-105"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Workspace</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
