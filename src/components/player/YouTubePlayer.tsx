@@ -24,6 +24,7 @@ import {
   Shuffle,
   Repeat,
   Repeat1,
+  AlertTriangle,
 } from 'lucide-react';
 import { VideoItem } from '../dashboard/VideoCard';
 import Modal from '@/components/ui/Modal';
@@ -81,8 +82,13 @@ export default function YouTubePlayer({
   const loopModeRef = useRef(loopMode);
   loopModeRef.current = loopMode;
 
+  const [videoError, setVideoError] = useState<{ code: number; message: string } | null>(null);
+  const isPlayerReadyRef = useRef(false);
+  const pendingVideoRef = useRef<VideoItem | null>(null);
+
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const handleVideoCompletedRef = useRef<() => void>(() => {});
+  const handleVideoErrorRef = useRef<(code: number) => void>(() => {});
 
   // Load shuffle and loop preferences from localStorage
   useEffect(() => {
@@ -184,6 +190,7 @@ export default function YouTubePlayer({
       countdownIntervalRef.current = null;
     }
     setAutoAdvanceCountdown(null);
+    setVideoError(null);
     setCompleted(false);
 
     setCurrentVideo(targetVideo);
@@ -195,13 +202,14 @@ export default function YouTubePlayer({
     const newUrl = `/w/${domainId}/player?v=${targetVideo.youtube_id}${playlistParam}`;
     window.history.pushState(null, '', newUrl);
 
-    if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
+    if (isPlayerReadyRef.current && ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
       try {
         ytPlayerRef.current.loadVideoById(targetVideo.youtube_id);
-        ytPlayerRef.current.playVideo();
       } catch (err) {
         console.error('Error loading video by ID in existing player:', err);
       }
+    } else {
+      pendingVideoRef.current = targetVideo;
     }
 
     markAsPlayed(targetVideo);
@@ -214,6 +222,49 @@ export default function YouTubePlayer({
     }
     setAutoAdvanceCountdown(null);
   };
+
+  const handleVideoError = (code: number) => {
+    let msg = 'Playback error occurred on this video.';
+    if (code === 101 || code === 150) {
+      msg = 'Playback in embedded players is restricted by the video creator or copyright holder.';
+    } else if (code === 100) {
+      msg = 'This video has been removed or marked private on YouTube.';
+    } else if (code === 2) {
+      msg = 'Invalid video parameter or URL on YouTube.';
+    } else if (code === 5) {
+      msg = 'HTML5 player playback error on this device.';
+    }
+
+    setVideoError({ code, message: msg });
+    setIsPlaying(false);
+
+    // If there is a next video in the queue, auto-advance so playback doesn't stall
+    if (nextVideoRef.current) {
+      const next = nextVideoRef.current;
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+      setAutoAdvanceCountdown(3);
+      let count = 3;
+      countdownIntervalRef.current = setInterval(() => {
+        count -= 1;
+        if (count <= 0) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          setAutoAdvanceCountdown(null);
+          setVideoError(null);
+          const target = nextVideoRef.current || next;
+          playVideo(target);
+        } else {
+          setAutoAdvanceCountdown(count);
+        }
+      }, 1000);
+    }
+  };
+
+  handleVideoErrorRef.current = handleVideoError;
 
   const handleRemoveFromQueue = async (e: React.MouseEvent, plItem: VideoItem) => {
     e.preventDefault();
@@ -367,20 +418,27 @@ export default function YouTubePlayer({
 
       ytPlayerRef.current = new window.YT.Player(playerContainerRef.current, {
         videoId: currentVideoRef.current.youtube_id,
+        host: 'https://www.youtube-nocookie.com',
         playerVars: {
           autoplay: 1,
+          enablejsapi: 1,
           modestbranding: 1,
           rel: 0,
           iv_load_policy: 3,
           playsinline: 1,
           controls: 1,
           fs: 1,
-          origin: typeof window !== 'undefined' ? window.location.origin : '',
         },
         events: {
           onReady: () => {
+            isPlayerReadyRef.current = true;
             if (!isCancelled) {
               markAsPlayed(currentVideoRef.current);
+              if (pendingVideoRef.current) {
+                const pending = pendingVideoRef.current;
+                pendingVideoRef.current = null;
+                playVideo(pending);
+              }
             }
           },
           onStateChange: (event: any) => {
@@ -388,6 +446,7 @@ export default function YouTubePlayer({
             // YT.PlayerState.PLAYING = 1
             if (event.data === 1) {
               setIsPlaying(true);
+              setVideoError(null);
             }
             // YT.PlayerState.PAUSED = 2
             if (event.data === 2) {
@@ -399,15 +458,22 @@ export default function YouTubePlayer({
               handleVideoCompletedRef.current();
             }
           },
+          onError: (event: any) => {
+            if (isCancelled) return;
+            handleVideoErrorRef.current(event.data);
+          },
         },
       });
     };
 
-    if (!window.YT) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+    if (!window.YT || !window.YT.Player) {
+      let tag = document.querySelector('script[src="https://www.youtube.com/iframe_api"]') as HTMLScriptElement | null;
+      if (!tag) {
+        tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+      }
       window.onYouTubeIframeAPIReady = initPlayer;
     } else {
       initPlayer();
@@ -415,6 +481,7 @@ export default function YouTubePlayer({
 
     return () => {
       isCancelled = true;
+      isPlayerReadyRef.current = false;
       if (countdownIntervalRef.current) {
         clearInterval(countdownIntervalRef.current);
         countdownIntervalRef.current = null;
@@ -667,6 +734,59 @@ export default function YouTubePlayer({
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Video Error / Embedding Restricted Overlay */}
+            {videoError && (
+              <div className="absolute inset-0 z-30 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
+                <div className="p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/30 text-amber-400 mb-3 shadow-lg">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-1.5">
+                  Playback Restricted in Embed
+                </h3>
+                <p className="text-xs text-zinc-300 max-w-md mb-5 leading-relaxed">
+                  {videoError.message}
+                </p>
+
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  {nextVideo && (
+                    <button
+                      onClick={() => {
+                        setVideoError(null);
+                        playVideo(nextVideo);
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white shadow-lg flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <span>
+                        {autoAdvanceCountdown !== null
+                          ? `Skip to Next Video (${autoAdvanceCountdown}s)`
+                          : 'Skip to Next Video'}
+                      </span>
+                      <SkipForward className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
+                  {autoAdvanceCountdown !== null && (
+                    <button
+                      onClick={cancelAutoAdvance}
+                      className="px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition-colors cursor-pointer"
+                    >
+                      Stay Here
+                    </button>
+                  )}
+
+                  <a
+                    href={`https://www.youtube.com/watch?v=${currentVideo.youtube_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-xs font-medium text-zinc-200 border border-zinc-700 flex items-center gap-1.5 transition-colors"
+                  >
+                    <span>Watch on YouTube</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                  </a>
                 </div>
               </div>
             )}
