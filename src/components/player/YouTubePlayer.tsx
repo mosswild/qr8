@@ -153,6 +153,7 @@ export default function YouTubePlayer({
     }
   };
 
+  const isWorkspaceContinuous = playlistId === 'all';
   const hasPlaylist = queueVideos.length > 0;
   const activePlaylistIndex = queueVideos.findIndex((v) => v.youtube_id === video.youtube_id);
   const isPlaylistLooping =
@@ -167,7 +168,7 @@ export default function YouTubePlayer({
   const handleRemoveFromQueue = async (e: React.MouseEvent, plItem: VideoItem) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!playlistId) return;
+    if (!playlistId || isWorkspaceContinuous) return;
 
     if (!confirm(`Remove "${plItem.title}" from this playlist?`)) {
       return;
@@ -386,6 +387,12 @@ export default function YouTubePlayer({
           <span className="text-xs text-zinc-400 truncate max-w-[90px] xs:max-w-[130px] sm:max-w-xs md:max-w-md">
             {video.title}
           </span>
+          {isWorkspaceContinuous && (
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-950/70 border border-indigo-500/30 text-indigo-300 text-[10px] font-semibold flex-shrink-0">
+              <Play className="w-2.5 h-2.5 fill-indigo-400 text-indigo-400" />
+              <span>Continuous Play</span>
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
@@ -423,13 +430,24 @@ export default function YouTubePlayer({
               onClick={() => setIsQueueOpen(!isQueueOpen)}
               className={`flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                 isQueueOpen
-                  ? 'bg-violet-950/50 border-violet-500/50 text-violet-300 shadow-sm'
+                  ? isWorkspaceContinuous
+                    ? 'bg-indigo-950/60 border-indigo-500/50 text-indigo-200 shadow-sm'
+                    : 'bg-violet-950/50 border-violet-500/50 text-violet-300 shadow-sm'
                   : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200'
               }`}
-              title="Toggle Playlist Queue"
+              title={isWorkspaceContinuous ? 'Toggle Workspace Continuous Queue' : 'Toggle Playlist Queue'}
             >
-              <Layers className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
-              <span><span className="hidden xs:inline">Queue </span>({activePlaylistIndex >= 0 ? activePlaylistIndex + 1 : 1}/{queueVideos.length})</span>
+              {isWorkspaceContinuous ? (
+                <Play className="w-3.5 h-3.5 fill-indigo-400 text-indigo-400 flex-shrink-0" />
+              ) : (
+                <Layers className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
+              )}
+              <span>
+                <span className="hidden xs:inline">
+                  {isWorkspaceContinuous ? 'Workspace ' : 'Queue '}
+                </span>
+                ({activePlaylistIndex >= 0 ? activePlaylistIndex + 1 : 1}/{queueVideos.length})
+              </span>
             </button>
           )}
 
@@ -539,7 +557,11 @@ export default function YouTubePlayer({
                 <div className="bg-black/90 backdrop-blur-md border border-violet-500/50 p-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in fade-in">
                   <div>
                     <p className="text-xs text-violet-300 font-semibold">
-                      {isPlaylistLooping ? 'Playlist Complete • Looping to Start' : 'Video Complete!'}
+                      {isPlaylistLooping
+                        ? isWorkspaceContinuous
+                          ? 'Workspace Complete • Looping to Start'
+                          : 'Playlist Complete • Looping to Start'
+                        : 'Video Complete!'}
                     </p>
                     <p className="text-sm font-bold text-white line-clamp-1 max-w-xs">
                       Up Next: {nextVideo.title}
@@ -628,7 +650,7 @@ export default function YouTubePlayer({
                 <span>Cast</span>
               </button>
 
-              {playlistId && (
+              {playlistId && !isWorkspaceContinuous && (
                 <>
                   <span>•</span>
                   <button
@@ -672,13 +694,27 @@ export default function YouTubePlayer({
           <aside className="w-full lg:w-80 xl:w-96 rounded-2xl bg-[#0f111a] border border-zinc-800/90 overflow-hidden flex flex-col max-h-[620px] shadow-2xl flex-shrink-0 animate-in fade-in slide-in-from-right-3 duration-200">
             <div className="p-4 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-900/40">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-violet-950/60 text-violet-400 border border-violet-500/30">
-                  <Layers className="w-4 h-4" />
+                <div
+                  className={`p-1.5 rounded-lg border ${
+                    isWorkspaceContinuous
+                      ? 'bg-indigo-950/60 text-indigo-400 border-indigo-500/30'
+                      : 'bg-violet-950/60 text-violet-400 border-violet-500/30'
+                  }`}
+                >
+                  {isWorkspaceContinuous ? (
+                    <Play className="w-4 h-4 fill-indigo-400 text-indigo-400" />
+                  ) : (
+                    <Layers className="w-4 h-4" />
+                  )}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white tracking-tight">Playlist Deck Queue</h3>
+                  <h3 className="text-sm font-bold text-white tracking-tight">
+                    {isWorkspaceContinuous ? 'Workspace Continuous Queue' : 'Playlist Deck Queue'}
+                  </h3>
                   <p className="text-[11px] text-zinc-400">
-                    Playing {activePlaylistIndex >= 0 ? activePlaylistIndex + 1 : 1} of {queueVideos.length}
+                    {isWorkspaceContinuous
+                      ? `Playing ${activePlaylistIndex >= 0 ? activePlaylistIndex + 1 : 1} of ${queueVideos.length} in ${domainName}`
+                      : `Playing ${activePlaylistIndex >= 0 ? activePlaylistIndex + 1 : 1} of ${queueVideos.length}`}
                   </p>
                 </div>
               </div>
@@ -797,7 +833,7 @@ export default function YouTubePlayer({
                     </Link>
 
                     {/* Remove from Playlist Button */}
-                    {playlistId && (
+                    {playlistId && !isWorkspaceContinuous && (
                       <button
                         type="button"
                         onClick={(e) => handleRemoveFromQueue(e, plItem)}

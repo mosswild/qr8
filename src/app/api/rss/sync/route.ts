@@ -46,7 +46,30 @@ export async function DELETE(req: Request) {
     if (!id) return NextResponse.json({ error: 'Missing creator ID' }, { status: 400 });
 
     const db = getDb();
-    db.prepare('DELETE FROM creators WHERE id = ?').run(id);
+
+    // Look up creator first so we can remove uncurated subscription videos in What's New
+    const creator = db.prepare('SELECT * FROM creators WHERE id = ?').get(id) as any;
+    if (creator) {
+      // Remove all videos from this creator that are in What's New (source_type = 'subscription').
+      // Curated workspace library videos (source_type = 'manual') are preserved.
+      db.prepare(`
+        DELETE FROM videos 
+        WHERE domain_id = ? 
+          AND (creator_id = ? OR channel_name = ?)
+          AND source_type = 'subscription'
+      `).run(creator.domain_id, creator.id, creator.channel_name);
+
+      db.prepare('DELETE FROM creators WHERE id = ?').run(id);
+    } else {
+      // Creator not found by id, but run fallback cleanup just in case
+      db.prepare(`
+        DELETE FROM videos 
+        WHERE creator_id = ? 
+          AND source_type = 'subscription'
+      `).run(id);
+      db.prepare('DELETE FROM creators WHERE id = ?').run(id);
+    }
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

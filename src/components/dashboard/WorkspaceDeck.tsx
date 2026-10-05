@@ -15,6 +15,7 @@ import {
   Trash2,
   AlertTriangle,
   Loader2,
+  Play,
 } from 'lucide-react';
 import Shelf from './Shelf';
 import DailyShuffle from './DailyShuffle';
@@ -259,6 +260,18 @@ export default function WorkspaceDeck({
               )}
             </button>
 
+            {/* Continuous Play button */}
+            {allVideos.length > 0 && (
+              <Link
+                href={`/w/${domain.id}/player?playlist=all`}
+                className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
+                title="Continuous Play: Play all videos in this workspace as a playlist"
+              >
+                <Play className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
+                <span className="hidden lg:inline">Continuous Play</span>
+              </Link>
+            )}
+
             {/* New Playlist button */}
             <button
               onClick={() => setIsPlaylistOpen(true)}
@@ -387,9 +400,22 @@ export default function WorkspaceDeck({
           icon={<Sparkles className="w-5 h-5 text-amber-400" />}
           videos={allVideos}
           domainId={domain.id}
+          playlistContext="all"
           emptyMessage="Your workspace library is empty. Click '+ Quick Add' to paste your first video or curate from 'What's New'."
           onVideoDeleted={handleVideoDeleted}
           onPlaylistUpdated={refreshWorkspaceData}
+          actionButton={
+            allVideos.length > 0 ? (
+              <Link
+                href={`/w/${domain.id}/player?playlist=all`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-xs font-semibold text-indigo-200 hover:text-white transition-all shadow-sm"
+                title="Play all workspace videos continuously"
+              >
+                <Play className="w-3.5 h-3.5 fill-indigo-400 text-indigo-400" />
+                <span>Continuous Play</span>
+              </Link>
+            ) : null
+          }
         />
       </main>
 

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MoreVertical, Pencil, Archive, ArchiveRestore, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { MoreVertical, Pencil, Archive, ArchiveRestore, Trash2, Play } from 'lucide-react';
 
 interface WorkspaceMenuProps {
   domainId: string;
@@ -98,6 +99,15 @@ export default function WorkspaceMenu({
           </div>
 
           <div className="space-y-0.5 mt-0.5">
+            <Link
+              href={`/w/${domainId}/player?playlist=all`}
+              onClick={() => updateOpen(false)}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors text-left"
+            >
+              <Play className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
+              <span>Continuous Play</span>
+            </Link>
+
             <button
               type="button"
               onClick={(e) => handleAction(e, onRenameClick)}

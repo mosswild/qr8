@@ -188,6 +188,7 @@ qr8/
   - Control workout playback and view cues from a mobile device while displaying full-screen on a television or external monitor.
 - 🏷️ **Tagging & Duration Filtering:**
   - Filter curated library items by duration (e.g. `< 15 min`, `15–30 min`, `30+ min`) or user-defined activity tags.
+- [x] Add the ability to play the entire workspace on continuous play mode. I.e. it treat all the videos in the workspace as one big playlist and you can make it loop or shuffle like a regular playlist.
 
 ---
 

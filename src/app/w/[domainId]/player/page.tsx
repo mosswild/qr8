@@ -24,9 +24,15 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
 
   if (!youtubeId) {
     // If no video specified, pick the first video from domain or redirect
-    const firstVideo = db.prepare('SELECT youtube_id FROM videos WHERE domain_id = ? LIMIT 1').get(domainId) as any;
+    const firstVideo = db.prepare(`
+      SELECT youtube_id FROM videos 
+      WHERE domain_id = ? 
+      ORDER BY CASE WHEN source_type = 'manual' THEN 0 ELSE 1 END, created_at DESC 
+      LIMIT 1
+    `).get(domainId) as any;
     if (firstVideo) {
-      redirect(`/w/${domainId}/player?v=${firstVideo.youtube_id}`);
+      const playlistParam = playlistId ? `&playlist=${playlistId}` : '';
+      redirect(`/w/${domainId}/player?v=${firstVideo.youtube_id}${playlistParam}`);
     } else {
       redirect(`/w/${domainId}`);
     }
@@ -56,7 +62,29 @@ export default async function PlayerPage({ params, searchParams }: PlayerPagePro
   let playlistVideos: VideoItem[] = [];
   let currentPlaylistIndex = -1;
 
-  if (playlistId) {
+  if (playlistId === 'all') {
+    // Continuous Workspace Mode: Load all curated videos in this workspace
+    playlistVideos = db.prepare(`
+      SELECT * FROM videos 
+      WHERE domain_id = ? AND source_type = 'manual'
+      ORDER BY created_at DESC
+    `).all(domainId) as VideoItem[];
+
+    // Fallback if workspace has no manual videos yet, include subscription videos
+    if (playlistVideos.length === 0) {
+      playlistVideos = db.prepare(`
+        SELECT * FROM videos 
+        WHERE domain_id = ?
+        ORDER BY created_at DESC
+      `).all(domainId) as VideoItem[];
+    }
+
+    currentPlaylistIndex = playlistVideos.findIndex((v) => v.youtube_id === youtubeId);
+    if (currentPlaylistIndex === -1 && video) {
+      playlistVideos = [video, ...playlistVideos];
+      currentPlaylistIndex = 0;
+    }
+  } else if (playlistId) {
     playlistVideos = db.prepare(`
       SELECT v.*, pi.position
       FROM playlist_items pi

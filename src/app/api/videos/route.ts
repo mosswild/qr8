@@ -29,10 +29,12 @@ export async function GET(req: Request) {
       // Latest uploads from creators followed in this workspace
       const videos = db.prepare(`
         SELECT * FROM videos 
-        WHERE domain_id = ? AND source_type = 'subscription'
+        WHERE domain_id = ? 
+          AND source_type = 'subscription'
+          AND creator_id IN (SELECT id FROM creators WHERE domain_id = ?)
         ORDER BY published_at DESC, created_at DESC
         LIMIT ?
-      `).all(domainId, limit);
+      `).all(domainId, domainId, limit);
       return NextResponse.json({ videos });
     }
 

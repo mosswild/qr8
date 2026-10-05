@@ -76,13 +76,19 @@ export default function CreatorsModal({
   };
 
   const handleUnsubscribe = async (creatorId: string) => {
-    if (!confirm('Unsubscribe from this channel? Existing downloaded items will remain.')) return;
+    if (
+      !confirm(
+        'Unsubscribe from this channel? Videos already added to your library will remain, but videos in "What\'s New" will be removed.'
+      )
+    )
+      return;
     try {
       const res = await apiFetch(`/api/rss/sync?id=${encodeURIComponent(creatorId)}`, {
         method: 'DELETE',
       });
       if (res.ok) {
         setCreators((prev) => prev.filter((c) => c.id !== creatorId));
+        onSyncCompleted();
       }
     } catch (err) {
       console.error('Failed to unsubscribe:', err);

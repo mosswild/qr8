@@ -104,4 +104,109 @@ assert.strictEqual(parsedData.feed.entry.title, '15 Min Daily Mobility Flow');
 assert.strictEqual(parsedData.feed.entry['media:group']['media:thumbnail']['@_url'], 'https://i.ytimg.com/vi/demo1234567/hqdefault.jpg');
 console.log('✓ YouTube Atom XML parsed and mapped successfully');
 
+// 3. Test Creator Unsubscribe / Removal Logic
+const Database = require('better-sqlite3');
+const fs = require('fs');
+const path = require('path');
+
+const db = new Database(':memory:');
+db.pragma('foreign_keys = ON');
+const schemaSql = fs.readFileSync(path.join(__dirname, 'src/lib/db/schema.sql'), 'utf-8');
+db.exec(schemaSql);
+
+// Seed domain
+db.prepare("INSERT INTO domains (id, name, sort_order) VALUES ('dom-1', 'Fitness', 1)").run();
+
+// Seed creators
+db.prepare("INSERT INTO creators (id, domain_id, channel_id, channel_name, rss_feed_url) VALUES ('c-1', 'dom-1', 'UC1', 'Creator One', 'https://example.com/rss1')").run();
+db.prepare("INSERT INTO creators (id, domain_id, channel_id, channel_name, rss_feed_url) VALUES ('c-2', 'dom-1', 'UC2', 'Creator Two', 'https://example.com/rss2')").run();
+
+// Seed videos for Creator One: one subscription (What's New) and one manual (Library)
+db.prepare(`
+  INSERT INTO videos (id, domain_id, creator_id, youtube_id, title, channel_name, source_type)
+  VALUES ('v-sub-1', 'dom-1', 'c-1', 'yt-sub-1', 'New Flow 1', 'Creator One', 'subscription')
+`).run();
+db.prepare(`
+  INSERT INTO videos (id, domain_id, creator_id, youtube_id, title, channel_name, source_type)
+  VALUES ('v-man-1', 'dom-1', 'c-1', 'yt-man-1', 'Curated Favorite 1', 'Creator One', 'manual')
+`).run();
+
+// Seed video for Creator Two: subscription (What's New)
+db.prepare(`
+  INSERT INTO videos (id, domain_id, creator_id, youtube_id, title, channel_name, source_type)
+  VALUES ('v-sub-2', 'dom-1', 'c-2', 'yt-sub-2', 'New Flow 2', 'Creator Two', 'subscription')
+`).run();
+
+// Before deletion check
+const preWhatsNew = db.prepare("SELECT id FROM videos WHERE domain_id = 'dom-1' AND source_type = 'subscription'").all();
+assert.strictEqual(preWhatsNew.length, 2);
+
+// Simulate creator deletion for c-1
+const creatorToDelete = db.prepare('SELECT * FROM creators WHERE id = ?').get('c-1');
+assert.ok(creatorToDelete);
+
+db.prepare(`
+  DELETE FROM videos 
+  WHERE domain_id = ? 
+    AND (creator_id = ? OR channel_name = ?)
+    AND source_type = 'subscription'
+`).run(creatorToDelete.domain_id, creatorToDelete.id, creatorToDelete.channel_name);
+
+db.prepare('DELETE FROM creators WHERE id = ?').run(creatorToDelete.id);
+
+// Verify results
+const postWhatsNew = db.prepare(`
+  SELECT id FROM videos 
+  WHERE domain_id = 'dom-1' 
+    AND source_type = 'subscription' 
+    AND creator_id IN (SELECT id FROM creators WHERE domain_id = 'dom-1')
+`).all();
+assert.strictEqual(postWhatsNew.length, 1);
+assert.strictEqual(postWhatsNew[0].id, 'v-sub-2');
+console.log("✓ Removed creator's uncurated subscription videos removed from What's New");
+
+const postLibrary = db.prepare("SELECT id, creator_id FROM videos WHERE domain_id = 'dom-1' AND source_type = 'manual'").all();
+assert.strictEqual(postLibrary.length, 1);
+assert.strictEqual(postLibrary[0].id, 'v-man-1');
+assert.strictEqual(postLibrary[0].creator_id, null); // ON DELETE SET NULL
+console.log("✓ Curated library videos from removed creator preserved in library");
+
+// 4. Test Continuous Workspace Play Mode Logic
+// Update v-man-1 created_at and seed extra library videos in dom-1
+db.prepare("UPDATE videos SET created_at = '2026-01-01 00:00:00' WHERE id = 'v-man-1'").run();
+db.prepare(`
+  INSERT INTO videos (id, domain_id, youtube_id, title, channel_name, source_type, created_at)
+  VALUES ('v-man-2', 'dom-1', 'yt-man-2', 'Second Flow', 'Creator Two', 'manual', '2026-01-02 00:00:00')
+`).run();
+db.prepare(`
+  INSERT INTO videos (id, domain_id, youtube_id, title, channel_name, source_type, created_at)
+  VALUES ('v-man-3', 'dom-1', 'yt-man-3', 'Third Flow', 'Creator Three', 'manual', '2026-01-03 00:00:00')
+`).run();
+
+// Query for playlistId === 'all'
+const continuousQueue = db.prepare(`
+  SELECT * FROM videos 
+  WHERE domain_id = 'dom-1' AND source_type = 'manual'
+  ORDER BY created_at DESC
+`).all();
+
+assert.strictEqual(continuousQueue.length, 3);
+assert.strictEqual(continuousQueue[0].id, 'v-man-3');
+assert.strictEqual(continuousQueue[1].id, 'v-man-2');
+assert.strictEqual(continuousQueue[2].id, 'v-man-1');
+console.log("✓ Continuous workspace queue queries all workspace library videos");
+
+// Test queue navigation and loop mode all
+const activeIdx = continuousQueue.findIndex(v => v.id === 'v-man-1'); // last video
+const loopModeAll = 'all';
+const nextVideoInLoop = (activeIdx >= 0 && activeIdx < continuousQueue.length - 1)
+  ? continuousQueue[activeIdx + 1]
+  : loopModeAll === 'all' && continuousQueue.length > 0
+  ? continuousQueue[0]
+  : null;
+
+assert.ok(nextVideoInLoop);
+assert.strictEqual(nextVideoInLoop.id, 'v-man-3'); // loops back to first video
+console.log("✓ Continuous workspace loop (all) wraps around to first video");
+
 console.log('\nAll tests passed successfully!');

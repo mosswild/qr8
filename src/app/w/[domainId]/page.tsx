@@ -33,10 +33,12 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
   // What's new from subscribed creators
   const whatsNewVideos = db.prepare(`
     SELECT * FROM videos 
-    WHERE domain_id = ? AND source_type = 'subscription'
+    WHERE domain_id = ? 
+      AND source_type = 'subscription'
+      AND creator_id IN (SELECT id FROM creators WHERE domain_id = ?)
     ORDER BY published_at DESC, created_at DESC
     LIMIT 20
-  `).all(domainId) as any[];
+  `).all(domainId, domainId) as any[];
 
   // Recently played history
   const recentVideos = db.prepare(`

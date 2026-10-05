@@ -38,6 +38,17 @@ export function getDb(): Database.Database {
     console.error('Migration error checking is_archived column:', err);
   }
 
+  // Clean up any orphaned subscription videos whose creators were previously removed
+  try {
+    db.prepare(`
+      DELETE FROM videos 
+      WHERE source_type = 'subscription' 
+        AND (creator_id IS NULL OR creator_id NOT IN (SELECT id FROM creators))
+    `).run();
+  } catch (err) {
+    console.error('Migration cleanup error for orphaned subscription videos:', err);
+  }
+
   // Ensure default seed data if no domains exist
   seedInitialData(db);
 
