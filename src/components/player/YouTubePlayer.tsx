@@ -58,6 +58,7 @@ export default function YouTubePlayer({
   const cinemaContainerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
 
+  const [currentVideo, setCurrentVideo] = useState<VideoItem>(video);
   const [isPlaying, setIsPlaying] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [completionCount, setCompletionCount] = useState(video.completion_count);
@@ -73,6 +74,15 @@ export default function YouTubePlayer({
   const [isCurating, setIsCurating] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
   const [loopMode, setLoopMode] = useState<'off' | 'all' | 'one'>('off');
+
+  const currentVideoRef = useRef(currentVideo);
+  currentVideoRef.current = currentVideo;
+
+  const loopModeRef = useRef(loopMode);
+  loopModeRef.current = loopMode;
+
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const handleVideoCompletedRef = useRef<() => void>(() => {});
 
   // Load shuffle and loop preferences from localStorage
   useEffect(() => {
@@ -93,14 +103,14 @@ export default function YouTubePlayer({
   // Sync queue videos on playlist change or shuffle toggle
   useEffect(() => {
     if (isShuffle && playlistVideos.length > 0) {
-      const current = playlistVideos.find((v) => v.youtube_id === video.youtube_id);
-      const others = playlistVideos.filter((v) => v.youtube_id !== video.youtube_id);
+      const current = playlistVideos.find((v) => v.youtube_id === currentVideo.youtube_id);
+      const others = playlistVideos.filter((v) => v.youtube_id !== currentVideo.youtube_id);
       const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
       setQueueVideos(current ? [current, ...shuffledOthers] : shuffledOthers);
     } else {
       setQueueVideos(playlistVideos);
     }
-  }, [playlistVideos, isShuffle, video.youtube_id]);
+  }, [playlistVideos, isShuffle, currentVideo.youtube_id]);
 
   const handleToggleShuffle = () => {
     const nextShuffle = !isShuffle;
@@ -110,8 +120,8 @@ export default function YouTubePlayer({
     } catch (e) {}
 
     if (nextShuffle) {
-      const current = queueVideos.find((v) => v.youtube_id === video.youtube_id);
-      const others = queueVideos.filter((v) => v.youtube_id !== video.youtube_id);
+      const current = queueVideos.find((v) => v.youtube_id === currentVideo.youtube_id);
+      const others = queueVideos.filter((v) => v.youtube_id !== currentVideo.youtube_id);
       const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
       setQueueVideos(current ? [current, ...shuffledOthers] : shuffledOthers);
     } else {
@@ -121,8 +131,8 @@ export default function YouTubePlayer({
 
   const handleReshuffle = () => {
     if (!isShuffle) return;
-    const current = queueVideos.find((v) => v.youtube_id === video.youtube_id);
-    const others = playlistVideos.filter((v) => v.youtube_id !== video.youtube_id);
+    const current = queueVideos.find((v) => v.youtube_id === currentVideo.youtube_id);
+    const others = playlistVideos.filter((v) => v.youtube_id !== currentVideo.youtube_id);
     const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
     setQueueVideos(current ? [current, ...shuffledOthers] : shuffledOthers);
   };
@@ -141,7 +151,7 @@ export default function YouTubePlayer({
       const res = await apiFetch('/api/videos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId: video.id, action: 'curate' }),
+        body: JSON.stringify({ videoId: currentVideo.id, action: 'curate' }),
       });
       if (res.ok) {
         setIsCurated(true);
@@ -155,7 +165,7 @@ export default function YouTubePlayer({
 
   const isWorkspaceContinuous = playlistId === 'all';
   const hasPlaylist = queueVideos.length > 0;
-  const activePlaylistIndex = queueVideos.findIndex((v) => v.youtube_id === video.youtube_id);
+  const activePlaylistIndex = queueVideos.findIndex((v) => v.youtube_id === currentVideo.youtube_id);
   const isPlaylistLooping =
     activePlaylistIndex === queueVideos.length - 1 && loopMode === 'all';
   const nextVideo =
@@ -164,6 +174,46 @@ export default function YouTubePlayer({
       : loopMode === 'all' && queueVideos.length > 0
       ? queueVideos[0]
       : null;
+
+  const nextVideoRef = useRef(nextVideo);
+  nextVideoRef.current = nextVideo;
+
+  const playVideo = (targetVideo: VideoItem) => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setAutoAdvanceCountdown(null);
+    setCompleted(false);
+
+    setCurrentVideo(targetVideo);
+    setCompletionCount(targetVideo.completion_count);
+    setNotes(targetVideo.notes || '');
+    setIsCurated(targetVideo.source_type === 'manual');
+
+    const playlistParam = playlistId ? `&playlist=${playlistId}` : '';
+    const newUrl = `/w/${domainId}/player?v=${targetVideo.youtube_id}${playlistParam}`;
+    window.history.pushState(null, '', newUrl);
+
+    if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
+      try {
+        ytPlayerRef.current.loadVideoById(targetVideo.youtube_id);
+        ytPlayerRef.current.playVideo();
+      } catch (err) {
+        console.error('Error loading video by ID in existing player:', err);
+      }
+    }
+
+    markAsPlayed(targetVideo);
+  };
+
+  const cancelAutoAdvance = () => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setAutoAdvanceCountdown(null);
+  };
 
   const handleRemoveFromQueue = async (e: React.MouseEvent, plItem: VideoItem) => {
     e.preventDefault();
@@ -192,10 +242,10 @@ export default function YouTubePlayer({
         setQueueVideos(updated);
 
         // If removed video is currently playing
-        if (plItem.youtube_id === video.youtube_id) {
+        if (plItem.youtube_id === currentVideo.youtube_id) {
           if (updated.length > 0) {
             const nextIdx = activePlaylistIndex < updated.length ? activePlaylistIndex : 0;
-            router.push(`/w/${domainId}/player?v=${updated[nextIdx].youtube_id}&playlist=${playlistId}`);
+            playVideo(updated[nextIdx]);
           } else {
             router.push(`/w/${domainId}`);
           }
@@ -206,13 +256,14 @@ export default function YouTubePlayer({
     }
   };
 
-  // Record initial play start in database
-  const markAsPlayed = async () => {
+  // Record play start in database
+  const markAsPlayed = async (targetVideo?: VideoItem) => {
+    const v = targetVideo || currentVideoRef.current;
     try {
       await apiFetch('/api/videos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId: video.id, action: 'played' }),
+        body: JSON.stringify({ videoId: v.id, action: 'played' }),
       });
     } catch (err) {
       console.error('Failed to mark video as played:', err);
@@ -225,44 +276,55 @@ export default function YouTubePlayer({
     setCompleted(true);
     setCompletionCount((c) => c + 1);
 
+    const activeVid = currentVideoRef.current;
     try {
       await apiFetch('/api/videos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId: video.id, action: 'completed' }),
+        body: JSON.stringify({ videoId: activeVid.id, action: 'completed' }),
       });
     } catch (err) {
       console.error('Failed to record completion:', err);
     }
 
-    // If loopMode is 'one', loop current video
-    if (loopMode === 'one') {
+    // If loopMode is 'one', replay current video
+    if (loopModeRef.current === 'one') {
       setTimeout(() => {
         if (ytPlayerRef.current) {
           ytPlayerRef.current.seekTo(0);
           ytPlayerRef.current.playVideo();
           setCompleted(false);
         }
-      }, 500);
+      }, 300);
       return;
     }
 
     // Auto-advance if next video in playlist (including loop all)
-    if (nextVideo) {
+    const next = nextVideoRef.current;
+    if (next) {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
       setAutoAdvanceCountdown(3);
-      const timer = setInterval(() => {
-        setAutoAdvanceCountdown((prev) => {
-          if (prev === null || prev <= 1) {
-            clearInterval(timer);
-            const playlistParam = playlistId ? `&playlist=${playlistId}` : '';
-            router.push(`/w/${domainId}/player?v=${nextVideo.youtube_id}${playlistParam}`);
-            return null;
+      let count = 3;
+      countdownIntervalRef.current = setInterval(() => {
+        count -= 1;
+        if (count <= 0) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
           }
-          return prev - 1;
-        });
+          setAutoAdvanceCountdown(null);
+          const target = nextVideoRef.current || next;
+          playVideo(target);
+        } else {
+          setAutoAdvanceCountdown(count);
+        }
       }, 1000);
     }
   };
+
+  handleVideoCompletedRef.current = handleVideoCompleted;
 
   // Save notes
   const handleSaveNotes = async () => {
@@ -271,7 +333,7 @@ export default function YouTubePlayer({
       await apiFetch('/api/videos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId: video.id, action: 'note', note: notes }),
+        body: JSON.stringify({ videoId: currentVideo.id, action: 'note', note: notes }),
       });
       setNoteSaved(true);
       setTimeout(() => setNoteSaved(false), 2000);
@@ -294,23 +356,17 @@ export default function YouTubePlayer({
     }
   };
 
-  // Initialize YouTube IFrame API
+  // Initialize YouTube IFrame API once on mount
   useEffect(() => {
     let isCancelled = false;
 
     const initPlayer = () => {
       if (!window.YT || !window.YT.Player || !playerContainerRef.current) return;
 
-      if (ytPlayerRef.current) {
-        try {
-          ytPlayerRef.current.destroy();
-        } catch (e) {
-          // ignore cleanup errors
-        }
-      }
+      if (ytPlayerRef.current) return;
 
       ytPlayerRef.current = new window.YT.Player(playerContainerRef.current, {
-        videoId: video.youtube_id,
+        videoId: currentVideoRef.current.youtube_id,
         playerVars: {
           autoplay: 1,
           modestbranding: 1,
@@ -324,7 +380,7 @@ export default function YouTubePlayer({
         events: {
           onReady: () => {
             if (!isCancelled) {
-              markAsPlayed();
+              markAsPlayed(currentVideoRef.current);
             }
           },
           onStateChange: (event: any) => {
@@ -340,7 +396,7 @@ export default function YouTubePlayer({
             // YT.PlayerState.ENDED = 0
             if (event.data === 0) {
               setIsPlaying(false);
-              handleVideoCompleted();
+              handleVideoCompletedRef.current();
             }
           },
         },
@@ -359,15 +415,43 @@ export default function YouTubePlayer({
 
     return () => {
       isCancelled = true;
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
       if (ytPlayerRef.current) {
         try {
           ytPlayerRef.current.destroy();
+          ytPlayerRef.current = null;
         } catch (e) {
           // ignore
         }
       }
     };
+  }, []);
+
+  // Sync external video prop change (e.g. browser navigation)
+  useEffect(() => {
+    if (video.youtube_id !== currentVideo.youtube_id) {
+      playVideo(video);
+    }
   }, [video.youtube_id]);
+
+  // Support browser Back/Forward (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const vParam = params.get('v');
+      if (vParam && vParam !== currentVideoRef.current.youtube_id) {
+        const found = playlistVideos.find((v) => v.youtube_id === vParam);
+        if (found) {
+          playVideo(found);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [playlistVideos]);
 
   return (
     <div className="min-h-screen bg-[#06070a] flex flex-col text-zinc-100 w-full max-w-full overflow-x-hidden">
@@ -385,7 +469,7 @@ export default function YouTubePlayer({
           </Link>
           <span className="text-zinc-700 hidden sm:inline flex-shrink-0">|</span>
           <span className="text-xs text-zinc-400 truncate max-w-[90px] xs:max-w-[130px] sm:max-w-xs md:max-w-md">
-            {video.title}
+            {currentVideo.title}
           </span>
           {isWorkspaceContinuous && (
             <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-950/70 border border-indigo-500/30 text-indigo-300 text-[10px] font-semibold flex-shrink-0">
@@ -527,14 +611,14 @@ export default function YouTubePlayer({
 
           {/* Next in playlist if present */}
           {nextVideo && (
-            <Link
-              href={`/w/${domainId}/player?v=${nextVideo.youtube_id}${playlistId ? `&playlist=${playlistId}` : ''}`}
-              className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow transition-colors flex-shrink-0"
+            <button
+              onClick={() => playVideo(nextVideo)}
+              className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow transition-colors flex-shrink-0 cursor-pointer"
               title={isPlaylistLooping ? 'Loop back to beginning' : 'Next video in playlist'}
             >
               <span>{isPlaylistLooping ? 'Loop' : 'Next'}</span>
               <SkipForward className="w-3.5 h-3.5" />
-            </Link>
+            </button>
           )}
         </div>
         </div>
@@ -567,13 +651,22 @@ export default function YouTubePlayer({
                       Up Next: {nextVideo.title}
                     </p>
                   </div>
-                  <Link
-                    href={`/w/${domainId}/player?v=${nextVideo.youtube_id}${playlistId ? `&playlist=${playlistId}` : ''}`}
-                    className="px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white shadow flex items-center gap-1.5"
-                  >
-                    <span>Play ({autoAdvanceCountdown}s)</span>
-                    <SkipForward className="w-3.5 h-3.5" />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => playVideo(nextVideo)}
+                      className="px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white shadow flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <span>Play Now ({autoAdvanceCountdown}s)</span>
+                      <SkipForward className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={cancelAutoAdvance}
+                      className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                      title="Cancel auto-advance"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -618,7 +711,7 @@ export default function YouTubePlayer({
           {/* Minimal Clean Metadata Footer */}
           <div className="w-full mt-4 flex flex-wrap items-center justify-between gap-y-2 gap-x-3 text-xs text-zinc-500 px-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <span className="font-medium text-zinc-300">{video.channel_name}</span>
+              <span className="font-medium text-zinc-300">{currentVideo.channel_name}</span>
               <span>•</span>
               <button
                 onClick={handleFullscreen}
@@ -654,7 +747,7 @@ export default function YouTubePlayer({
                 <>
                   <span>•</span>
                   <button
-                    onClick={(e) => handleRemoveFromQueue(e, video)}
+                    onClick={(e) => handleRemoveFromQueue(e, currentVideo)}
                     className="inline-flex items-center gap-1 text-zinc-500 hover:text-rose-400 transition-colors"
                     title="Remove this video from current playlist"
                   >
@@ -678,7 +771,7 @@ export default function YouTubePlayer({
               )}
             </div>
             <a
-              href={`https://www.youtube.com/watch?v=${video.youtube_id}`}
+              href={`https://www.youtube.com/watch?v=${currentVideo.youtube_id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-zinc-500 hover:text-zinc-300 transition-colors flex-shrink-0"
@@ -784,7 +877,7 @@ export default function YouTubePlayer({
             {/* Scrollable Queue List */}
             <div className="overflow-y-auto p-2 space-y-1.5 shelf-scroll flex-1">
               {queueVideos.map((plItem, index) => {
-                const isActive = plItem.youtube_id === video.youtube_id;
+                const isActive = plItem.youtube_id === currentVideo.youtube_id;
                 return (
                   <div
                     key={plItem.id || index}
@@ -794,9 +887,10 @@ export default function YouTubePlayer({
                         : 'bg-zinc-900/30 border-transparent hover:bg-zinc-800/60 hover:border-zinc-700/50'
                     }`}
                   >
-                    <Link
-                      href={`/w/${domainId}/player?v=${plItem.youtube_id}${playlistId ? `&playlist=${playlistId}` : ''}`}
-                      className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={() => playVideo(plItem)}
+                      className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer text-left"
                     >
                       {/* Index or Playing indicator */}
                       <div className="w-5 flex-shrink-0 text-center text-xs font-semibold text-zinc-500">
@@ -830,7 +924,7 @@ export default function YouTubePlayer({
                           {plItem.channel_name || 'Creator'}
                         </span>
                       </div>
-                    </Link>
+                    </button>
 
                     {/* Remove from Playlist Button */}
                     {playlistId && !isWorkspaceContinuous && (
