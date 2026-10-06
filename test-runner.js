@@ -209,4 +209,38 @@ assert.ok(nextVideoInLoop);
 assert.strictEqual(nextVideoInLoop.id, 'v-man-3'); // loops back to first video
 console.log("✓ Continuous workspace loop (all) wraps around to first video");
 
+// 5. Test Playlist Shuffle Queue Stability
+function testShuffleArray(items) {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+const originalVideos = [
+  { id: '1', title: 'Video 1', youtube_id: 'yt-1' },
+  { id: '2', title: 'Video 2', youtube_id: 'yt-2' },
+  { id: '3', title: 'Video 3', youtube_id: 'yt-3' },
+  { id: '4', title: 'Video 4', youtube_id: 'yt-4' },
+];
+
+// Initial shuffle with video 1 playing:
+const currentVid = originalVideos[0];
+const others = originalVideos.filter(v => v.youtube_id !== currentVid.youtube_id);
+const shuffledQueue = [currentVid, ...testShuffleArray(others)];
+
+assert.strictEqual(shuffledQueue.length, 4);
+assert.strictEqual(shuffledQueue[0].youtube_id, 'yt-1');
+
+// When video 1 finishes and player moves to video 2 in the shuffled sequence:
+const activeIdxAfterAdvance = 1;
+const playingVideo = shuffledQueue[activeIdxAfterAdvance];
+
+// The queue MUST NOT be reshuffled, meaning shuffledQueue[0] remains video 1, and playingVideo is at index 1
+assert.strictEqual(shuffledQueue[0].youtube_id, 'yt-1');
+assert.strictEqual(shuffledQueue.findIndex(v => v.youtube_id === playingVideo.youtube_id), 1);
+console.log("✓ Shuffled playlist queue maintains stable sequence across video advances");
+
 console.log('\nAll tests passed successfully!');

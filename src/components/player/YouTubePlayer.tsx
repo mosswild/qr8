@@ -106,17 +106,28 @@ export default function YouTubePlayer({
     }
   }, []);
 
-  // Sync queue videos on playlist change or shuffle toggle
+// Fisher-Yates unbiased shuffle helper
+function shuffleArray<T>(items: T[]): T[] {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+  // Sync queue videos when playlist changes or shuffle is toggled.
+  // currentVideo is deliberately NOT in the dependency array so the randomized order
+  // remains completely stable as the player advances sequentially through the queue.
   useEffect(() => {
     if (isShuffle && playlistVideos.length > 0) {
-      const current = playlistVideos.find((v) => v.youtube_id === currentVideo.youtube_id);
-      const others = playlistVideos.filter((v) => v.youtube_id !== currentVideo.youtube_id);
-      const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
-      setQueueVideos(current ? [current, ...shuffledOthers] : shuffledOthers);
+      const current = playlistVideos.find((v) => v.youtube_id === currentVideoRef.current.youtube_id) || playlistVideos[0];
+      const others = playlistVideos.filter((v) => v.youtube_id !== current.youtube_id);
+      setQueueVideos([current, ...shuffleArray(others)]);
     } else {
       setQueueVideos(playlistVideos);
     }
-  }, [playlistVideos, isShuffle, currentVideo.youtube_id]);
+  }, [playlistVideos, isShuffle]);
 
   const handleToggleShuffle = () => {
     const nextShuffle = !isShuffle;
@@ -124,23 +135,13 @@ export default function YouTubePlayer({
     try {
       localStorage.setItem('qr8_player_shuffle', String(nextShuffle));
     } catch (e) {}
-
-    if (nextShuffle) {
-      const current = queueVideos.find((v) => v.youtube_id === currentVideo.youtube_id);
-      const others = queueVideos.filter((v) => v.youtube_id !== currentVideo.youtube_id);
-      const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
-      setQueueVideos(current ? [current, ...shuffledOthers] : shuffledOthers);
-    } else {
-      setQueueVideos(playlistVideos);
-    }
   };
 
   const handleReshuffle = () => {
-    if (!isShuffle) return;
-    const current = queueVideos.find((v) => v.youtube_id === currentVideo.youtube_id);
-    const others = playlistVideos.filter((v) => v.youtube_id !== currentVideo.youtube_id);
-    const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
-    setQueueVideos(current ? [current, ...shuffledOthers] : shuffledOthers);
+    if (!isShuffle || playlistVideos.length <= 1) return;
+    const current = playlistVideos.find((v) => v.youtube_id === currentVideoRef.current.youtube_id) || currentVideoRef.current;
+    const others = playlistVideos.filter((v) => v.youtube_id !== current.youtube_id);
+    setQueueVideos([current, ...shuffleArray(others)]);
   };
 
   const handleCycleLoop = () => {
