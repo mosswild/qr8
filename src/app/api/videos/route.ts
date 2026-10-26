@@ -66,7 +66,7 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { videoId, action, note } = body;
+    const { videoId, action, note, duration_seconds } = body;
     if (!videoId || !action) {
       return NextResponse.json({ error: 'videoId and action are required' }, { status: 400 });
     }
@@ -98,6 +98,12 @@ export async function PATCH(req: Request) {
         SET source_type = 'manual' 
         WHERE id = ? OR youtube_id = ?
       `).run(videoId, videoId);
+    } else if (action === 'set_duration' && duration_seconds) {
+      db.prepare(`
+        UPDATE videos 
+        SET duration_seconds = ? 
+        WHERE id = ? OR youtube_id = ?
+      `).run(duration_seconds, videoId, videoId);
     }
 
     const updated = db.prepare('SELECT * FROM videos WHERE id = ? OR youtube_id = ?').get(videoId, videoId);

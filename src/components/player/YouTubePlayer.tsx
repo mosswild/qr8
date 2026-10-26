@@ -26,7 +26,7 @@ import {
   Repeat1,
   AlertTriangle,
 } from 'lucide-react';
-import { VideoItem } from '../dashboard/VideoCard';
+import { VideoItem, getVideoDurationDisplay } from '../dashboard/VideoCard';
 import Modal from '@/components/ui/Modal';
 import { apiFetch } from '@/lib/api';
 
@@ -448,6 +448,22 @@ function shuffleArray<T>(items: T[]): T[] {
             if (event.data === 1) {
               setIsPlaying(true);
               setVideoError(null);
+              try {
+                const playerDuration = event.target?.getDuration ? event.target.getDuration() : 0;
+                if (playerDuration > 0 && (!currentVideoRef.current.duration_seconds || currentVideoRef.current.duration_seconds === 0)) {
+                  const rounded = Math.round(playerDuration);
+                  currentVideoRef.current.duration_seconds = rounded;
+                  apiFetch('/api/videos', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      videoId: currentVideoRef.current.id,
+                      action: 'set_duration',
+                      duration_seconds: rounded,
+                    }),
+                  }).catch(() => {});
+                }
+              } catch (e) {}
             }
             // YT.PlayerState.PAUSED = 2
             if (event.data === 2) {
@@ -1029,6 +1045,11 @@ function shuffleArray<T>(items: T[]): T[] {
                           alt={plItem.title}
                           className="w-full h-full object-cover"
                         />
+                        {getVideoDurationDisplay(plItem) && (
+                          <span className="absolute bottom-0.5 right-0.5 bg-black/80 px-1 py-0.2 rounded text-[9px] font-medium text-zinc-300 leading-none tabular-nums pointer-events-none">
+                            {getVideoDurationDisplay(plItem)}
+                          </span>
+                        )}
                       </div>
 
                       {/* Video Info */}

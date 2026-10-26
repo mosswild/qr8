@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Layers, Play, Trash2, X, Film, Check } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
-import { VideoItem } from './VideoCard';
+import { VideoItem, getVideoDurationDisplay } from './VideoCard';
 import { PlaylistWithVideos } from './PlaylistCard';
 import { apiFetch } from '@/lib/api';
 
@@ -131,6 +131,11 @@ export default function PlaylistDetailsModal({
                         alt={vid.title}
                         className="w-full h-full object-cover"
                       />
+                      {getVideoDurationDisplay(vid) && (
+                        <span className="absolute bottom-0.5 right-0.5 bg-black/80 px-1 py-0.2 rounded text-[9px] font-medium text-zinc-300 leading-none tabular-nums pointer-events-none">
+                          {getVideoDurationDisplay(vid)}
+                        </span>
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium text-zinc-200 line-clamp-1" title={vid.title}>

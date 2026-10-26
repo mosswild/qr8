@@ -25,17 +25,18 @@ export async function POST(req: Request) {
 
       const stmt = db.prepare(`
         INSERT INTO videos (
-          id, domain_id, youtube_id, title, thumbnail_url, channel_name, source_type, published_at
+          id, domain_id, youtube_id, title, thumbnail_url, channel_name, source_type, duration_seconds, published_at
         ) VALUES (
-          ?, ?, ?, ?, ?, ?, 'manual', CURRENT_TIMESTAMP
+          ?, ?, ?, ?, ?, ?, 'manual', ?, CURRENT_TIMESTAMP
         )
         ON CONFLICT(domain_id, youtube_id) DO UPDATE SET
           title = excluded.title,
           thumbnail_url = excluded.thumbnail_url,
-          channel_name = excluded.channel_name
+          channel_name = excluded.channel_name,
+          duration_seconds = CASE WHEN excluded.duration_seconds > 0 THEN excluded.duration_seconds ELSE videos.duration_seconds END
       `);
 
-      stmt.run(videoId, domainId, meta.youtubeId, meta.title, meta.thumbnailUrl, meta.channelName);
+      stmt.run(videoId, domainId, meta.youtubeId, meta.title, meta.thumbnailUrl, meta.channelName, meta.durationSeconds || 0);
 
       const saved = db.prepare('SELECT * FROM videos WHERE domain_id = ? AND youtube_id = ?').get(domainId, meta.youtubeId);
 
@@ -108,14 +109,15 @@ export async function POST(req: Request) {
 
       const videoInsertStmt = db.prepare(`
         INSERT INTO videos (
-          id, domain_id, youtube_id, title, thumbnail_url, channel_name, source_type, published_at
+          id, domain_id, youtube_id, title, thumbnail_url, channel_name, source_type, duration_seconds, published_at
         ) VALUES (
-          ?, ?, ?, ?, ?, ?, 'manual', ?
+          ?, ?, ?, ?, ?, ?, 'manual', ?, ?
         )
         ON CONFLICT(domain_id, youtube_id) DO UPDATE SET
           title = excluded.title,
           thumbnail_url = excluded.thumbnail_url,
-          source_type = 'manual'
+          source_type = 'manual',
+          duration_seconds = CASE WHEN excluded.duration_seconds > 0 THEN excluded.duration_seconds ELSE videos.duration_seconds END
       `);
 
       const linkStmt = db.prepare(`
@@ -127,6 +129,7 @@ export async function POST(req: Request) {
         let pos = 0;
         for (const item of videos) {
           const videoRecordId = `vid-${item.youtubeId}`;
+          const initialDuration = (item as any).durationSeconds || 0;
           videoInsertStmt.run(
             videoRecordId,
             domainId,
@@ -134,6 +137,7 @@ export async function POST(req: Request) {
             item.title,
             item.thumbnailUrl,
             item.channelName,
+            initialDuration,
             item.publishedAt
           );
 

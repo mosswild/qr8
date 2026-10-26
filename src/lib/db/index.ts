@@ -64,8 +64,8 @@ function seedInitialData(db: Database.Database) {
     'INSERT INTO domains (id, name, icon, sort_order) VALUES (?, ?, ?, ?)'
   );
   const insertVideo = db.prepare(`
-    INSERT INTO videos (id, domain_id, youtube_id, title, thumbnail_url, channel_name, source_type, completion_count, published_at, last_played_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO videos (id, domain_id, youtube_id, title, thumbnail_url, channel_name, source_type, duration_seconds, completion_count, published_at, last_played_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertPlaylist = db.prepare(
     'INSERT INTO playlists (id, domain_id, name, sort_order) VALUES (?, ?, ?, ?)'
@@ -94,6 +94,7 @@ function seedInitialData(db: Database.Database) {
         thumbnail_url: 'https://i.ytimg.com/vi/b1H3xO3x_Js/hqdefault.jpg',
         channel_name: 'Breathe and Flow',
         source_type: 'manual',
+        duration_seconds: 1157,
         completion_count: 3,
         published_at: '2024-01-10 08:00:00',
         last_played_at: '2024-05-12 09:30:00',
@@ -106,6 +107,7 @@ function seedInitialData(db: Database.Database) {
         thumbnail_url: 'https://i.ytimg.com/vi/g_tea8ZNk5A/hqdefault.jpg',
         channel_name: 'Tom Merrick',
         source_type: 'manual',
+        duration_seconds: 992,
         completion_count: 5,
         published_at: '2023-11-20 14:00:00',
         last_played_at: '2024-06-01 17:15:00',
@@ -118,6 +120,7 @@ function seedInitialData(db: Database.Database) {
         thumbnail_url: 'https://i.ytimg.com/vi/v7AYKMP6rOE/hqdefault.jpg',
         channel_name: 'Movement Culture',
         source_type: 'manual',
+        duration_seconds: 1425,
         completion_count: 1,
         published_at: '2024-03-05 10:00:00',
         last_played_at: null,
@@ -130,6 +133,7 @@ function seedInitialData(db: Database.Database) {
         thumbnail_url: 'https://i.ytimg.com/vi/sTANio_2E0Q/hqdefault.jpg',
         channel_name: 'Yoga With Tim',
         source_type: 'manual',
+        duration_seconds: 1256,
         completion_count: 2,
         published_at: '2024-02-18 19:30:00',
         last_played_at: '2024-04-20 21:00:00',
@@ -145,6 +149,7 @@ function seedInitialData(db: Database.Database) {
         v.thumbnail_url,
         v.channel_name,
         v.source_type,
+        v.duration_seconds,
         v.completion_count,
         v.published_at,
         v.last_played_at
@@ -169,6 +174,7 @@ function seedInitialData(db: Database.Database) {
       'https://i.ytimg.com/vi/YdB1HMCldJY/hqdefault.jpg',
       'Jeff Nippard',
       'manual',
+      1790,
       4,
       '2024-02-01 12:00:00',
       '2024-05-18 11:00:00'

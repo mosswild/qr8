@@ -3,31 +3,62 @@ export interface VideoMetadata {
   title: string;
   channelName: string;
   thumbnailUrl: string;
+  durationSeconds?: number;
+}
+
+export async function fetchVideoDuration(youtubeId: string): Promise<number> {
+  try {
+    const res = await fetch(`https://www.youtube.com/watch?v=${youtubeId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      next: { revalidate: 86400 },
+    });
+    if (res.ok) {
+      const html = await res.text();
+      const lengthMatch = html.match(/"lengthSeconds":"([0-9]+)"/);
+      if (lengthMatch && lengthMatch[1]) {
+        return parseInt(lengthMatch[1], 10);
+      }
+      const approxMatch = html.match(/"approxDurationMs":"([0-9]+)"/);
+      if (approxMatch && approxMatch[1]) {
+        return Math.round(parseInt(approxMatch[1], 10) / 1000);
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching video duration for', youtubeId, err);
+  }
+  return 0;
 }
 
 export async function fetchVideoMetadata(youtubeId: string): Promise<VideoMetadata> {
   const watchUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
   const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(watchUrl)}&format=json`;
 
-  try {
-    const res = await fetch(oembedUrl, {
+  const [oembedRes, durationSeconds] = await Promise.all([
+    fetch(oembedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; QR8/1.0)',
       },
       next: { revalidate: 3600 },
-    });
+    }).catch(() => null),
+    fetchVideoDuration(youtubeId).catch(() => 0),
+  ]);
 
-    if (res.ok) {
-      const data = await res.json();
+  if (oembedRes && oembedRes.ok) {
+    try {
+      const data = await oembedRes.json();
       return {
         youtubeId,
         title: data.title || `Video ${youtubeId}`,
         channelName: data.author_name || 'YouTube Creator',
         thumbnailUrl: data.thumbnail_url || `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`,
+        durationSeconds,
       };
+    } catch (err) {
+      console.error('oEmbed JSON error:', err);
     }
-  } catch (err) {
-    console.error('oEmbed fetch error for video:', youtubeId, err);
   }
 
   // Graceful fallback
@@ -36,6 +67,7 @@ export async function fetchVideoMetadata(youtubeId: string): Promise<VideoMetada
     title: `Video (${youtubeId})`,
     channelName: 'Unknown Channel',
     thumbnailUrl: `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`,
+    durationSeconds,
   };
 }
 

@@ -1,5 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 import getDb from '@/lib/db';
+import { extractDurationFromTitle } from '@/components/dashboard/VideoCard';
+import { fetchVideoDuration } from './oembed';
 
 export interface FeedVideo {
   youtubeId: string;
@@ -8,6 +10,7 @@ export interface FeedVideo {
   thumbnailUrl: string;
   channelName: string;
   channelId: string;
+  durationSeconds?: number;
 }
 
 export async function fetchChannelRssFeed(channelId: string): Promise<{
@@ -147,19 +150,21 @@ export async function syncCreatorFeed(creatorId: string): Promise<{ syncedCount:
 
   const insertStmt = db.prepare(`
     INSERT INTO videos (
-      id, domain_id, creator_id, youtube_id, title, thumbnail_url, channel_name, source_type, published_at
+      id, domain_id, creator_id, youtube_id, title, thumbnail_url, channel_name, source_type, duration_seconds, published_at
     ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, 'subscription', ?
+      ?, ?, ?, ?, ?, ?, ?, 'subscription', ?, ?
     )
     ON CONFLICT(domain_id, youtube_id) DO UPDATE SET
       title = excluded.title,
-      thumbnail_url = excluded.thumbnail_url
+      thumbnail_url = excluded.thumbnail_url,
+      duration_seconds = CASE WHEN excluded.duration_seconds > 0 THEN excluded.duration_seconds ELSE videos.duration_seconds END
   `);
 
   let syncedCount = 0;
   const insertMany = db.transaction((items: FeedVideo[]) => {
     for (const item of items) {
       const id = `vid-sub-${item.youtubeId}`;
+      const estimatedDuration = extractDurationFromTitle(item.title);
       insertStmt.run(
         id,
         creator.domain_id,
@@ -168,6 +173,7 @@ export async function syncCreatorFeed(creatorId: string): Promise<{ syncedCount:
         item.title,
         item.thumbnailUrl,
         channelTitle,
+        estimatedDuration,
         item.publishedAt
       );
       syncedCount++;
@@ -175,6 +181,30 @@ export async function syncCreatorFeed(creatorId: string): Promise<{ syncedCount:
   });
 
   insertMany(videos);
+
+  // Asynchronously resolve exact durations in background without blocking sync
+  setTimeout(async () => {
+    try {
+      const asyncDb = getDb();
+      for (const item of videos) {
+        try {
+          const duration = await fetchVideoDuration(item.youtubeId);
+          if (duration > 0) {
+            asyncDb.prepare(`
+              UPDATE videos 
+              SET duration_seconds = ? 
+              WHERE youtube_id = ?
+            `).run(duration, item.youtubeId);
+          }
+        } catch (e) {
+          // ignore individual video fetch failures
+        }
+      }
+    } catch (err) {
+      console.error('Background duration resolution error:', err);
+    }
+  }, 100);
+
   return { syncedCount };
 }
 

@@ -15,9 +15,44 @@ export interface VideoItem {
   channel_name: string;
   source_type: 'manual' | 'subscription';
   completion_count: number;
+  duration_seconds?: number;
   published_at?: string;
   last_played_at?: string;
   notes?: string;
+}
+
+export function formatDuration(seconds?: number | null): string {
+  if (!seconds || seconds <= 0) return '';
+  const totalSeconds = Math.floor(seconds);
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  if (hrs > 0) {
+    return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+export function extractDurationFromTitle(title?: string): number {
+  if (!title) return 0;
+  const match = title.match(/(\d+)\s*(?:min|mins|minute|minutes)\b/i);
+  if (match) {
+    const mins = parseInt(match[1], 10);
+    if (!isNaN(mins) && mins > 0) return mins * 60;
+  }
+  return 0;
+}
+
+export function getVideoDurationDisplay(video: { duration_seconds?: number; title?: string }): string {
+  if (video.duration_seconds && video.duration_seconds > 0) {
+    return formatDuration(video.duration_seconds);
+  }
+  const fromTitle = extractDurationFromTitle(video.title);
+  if (fromTitle > 0) {
+    return formatDuration(fromTitle);
+  }
+  return '';
 }
 
 interface VideoCardProps {
@@ -58,6 +93,8 @@ export default function VideoCard({
   const playerUrl = playlistContext
     ? `/w/${domainId}/player?v=${video.youtube_id}&playlist=${playlistContext}`
     : `/w/${domainId}/player?v=${video.youtube_id}`;
+
+  const durationDisplay = getVideoDurationDisplay(video);
 
   const handleCurate = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -166,6 +203,13 @@ export default function VideoCard({
           <div className="absolute top-2 right-2 flex items-center gap-1 bg-emerald-950/80 backdrop-blur-md px-2 py-0.5 rounded-md text-[11px] font-medium text-emerald-300 border border-emerald-500/30">
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
             <span>{video.completion_count}</span>
+          </div>
+        )}
+
+        {/* Time Length Overlay */}
+        {durationDisplay && (
+          <div className="absolute bottom-2 right-2 z-10 flex items-center px-1.5 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[11px] font-medium text-zinc-200 border border-white/10 tracking-tight leading-none shadow-sm tabular-nums pointer-events-none">
+            <span>{durationDisplay}</span>
           </div>
         )}
       </Link>
