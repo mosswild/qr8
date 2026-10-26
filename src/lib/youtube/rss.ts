@@ -1,6 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
 import getDb from '@/lib/db';
-import { extractDurationFromTitle } from '@/components/dashboard/VideoCard';
 import { fetchVideoDuration } from './oembed';
 
 export interface FeedVideo {
@@ -160,11 +159,22 @@ export async function syncCreatorFeed(creatorId: string): Promise<{ syncedCount:
       duration_seconds = CASE WHEN excluded.duration_seconds > 0 THEN excluded.duration_seconds ELSE videos.duration_seconds END
   `);
 
+  // Resolve real durations in parallel for the incoming feed items
+  const durationMap = new Map<string, number>();
+  await Promise.all(
+    videos.map(async (item) => {
+      try {
+        const d = await fetchVideoDuration(item.youtubeId);
+        if (d > 0) durationMap.set(item.youtubeId, d);
+      } catch (e) {}
+    })
+  );
+
   let syncedCount = 0;
   const insertMany = db.transaction((items: FeedVideo[]) => {
     for (const item of items) {
       const id = `vid-sub-${item.youtubeId}`;
-      const estimatedDuration = extractDurationFromTitle(item.title);
+      const realDuration = durationMap.get(item.youtubeId) || 0;
       insertStmt.run(
         id,
         creator.domain_id,
@@ -173,7 +183,7 @@ export async function syncCreatorFeed(creatorId: string): Promise<{ syncedCount:
         item.title,
         item.thumbnailUrl,
         channelTitle,
-        estimatedDuration,
+        realDuration,
         item.publishedAt
       );
       syncedCount++;
@@ -181,30 +191,6 @@ export async function syncCreatorFeed(creatorId: string): Promise<{ syncedCount:
   });
 
   insertMany(videos);
-
-  // Asynchronously resolve exact durations in background without blocking sync
-  setTimeout(async () => {
-    try {
-      const asyncDb = getDb();
-      for (const item of videos) {
-        try {
-          const duration = await fetchVideoDuration(item.youtubeId);
-          if (duration > 0) {
-            asyncDb.prepare(`
-              UPDATE videos 
-              SET duration_seconds = ? 
-              WHERE youtube_id = ?
-            `).run(duration, item.youtubeId);
-          }
-        } catch (e) {
-          // ignore individual video fetch failures
-        }
-      }
-    } catch (err) {
-      console.error('Background duration resolution error:', err);
-    }
-  }, 100);
-
   return { syncedCount };
 }
 

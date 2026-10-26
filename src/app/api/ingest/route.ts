@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import getDb from '@/lib/db';
 import { parseYouTubeUrl } from '@/lib/youtube/parser';
-import { fetchVideoMetadata, resolveChannelFromHandleOrUrl } from '@/lib/youtube/oembed';
+import { fetchVideoMetadata, fetchVideoDuration, resolveChannelFromHandleOrUrl } from '@/lib/youtube/oembed';
 import { syncCreatorFeed, fetchPlaylistRssFeed } from '@/lib/youtube/rss';
 
 export async function POST(req: Request) {
@@ -125,11 +125,21 @@ export async function POST(req: Request) {
         VALUES (?, ?, ?)
       `);
 
+      const durationMap = new Map<string, number>();
+      await Promise.all(
+        videos.map(async (item) => {
+          try {
+            const d = await fetchVideoDuration(item.youtubeId);
+            if (d > 0) durationMap.set(item.youtubeId, d);
+          } catch (e) {}
+        })
+      );
+
       const populatePlaylist = db.transaction(() => {
         let pos = 0;
         for (const item of videos) {
           const videoRecordId = `vid-${item.youtubeId}`;
-          const initialDuration = (item as any).durationSeconds || 0;
+          const realDuration = durationMap.get(item.youtubeId) || 0;
           videoInsertStmt.run(
             videoRecordId,
             domainId,
@@ -137,7 +147,7 @@ export async function POST(req: Request) {
             item.title,
             item.thumbnailUrl,
             item.channelName,
-            initialDuration,
+            realDuration,
             item.publishedAt
           );
 

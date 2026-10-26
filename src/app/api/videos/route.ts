@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import getDb from '@/lib/db';
+import { resolveAndPersistDurations } from '@/lib/youtube/oembed';
 
 export async function GET(req: Request) {
   try {
@@ -13,21 +14,19 @@ export async function GET(req: Request) {
     }
 
     const db = getDb();
+    let videos: any[] = [];
 
     if (filter === 'daily') {
       // Pick 3-5 randomized videos from this workspace's curated manual library
-      const videos = db.prepare(`
+      videos = db.prepare(`
         SELECT * FROM videos 
         WHERE domain_id = ? AND source_type = 'manual'
         ORDER BY RANDOM() 
         LIMIT 5
       `).all(domainId);
-      return NextResponse.json({ videos });
-    }
-
-    if (filter === 'whats_new') {
+    } else if (filter === 'whats_new') {
       // Latest uploads from creators followed in this workspace
-      const videos = db.prepare(`
+      videos = db.prepare(`
         SELECT * FROM videos 
         WHERE domain_id = ? 
           AND source_type = 'subscription'
@@ -35,27 +34,25 @@ export async function GET(req: Request) {
         ORDER BY published_at DESC, created_at DESC
         LIMIT ?
       `).all(domainId, domainId, limit);
-      return NextResponse.json({ videos });
-    }
-
-    if (filter === 'recent') {
+    } else if (filter === 'recent') {
       // Chronologically sorted by last_played_at
-      const videos = db.prepare(`
+      videos = db.prepare(`
         SELECT * FROM videos 
         WHERE domain_id = ? AND last_played_at IS NOT NULL
         ORDER BY last_played_at DESC
         LIMIT ?
       `).all(domainId, limit);
-      return NextResponse.json({ videos });
+    } else {
+      // Default: curated library videos in domain
+      videos = db.prepare(`
+        SELECT * FROM videos 
+        WHERE domain_id = ? AND source_type = 'manual'
+        ORDER BY created_at DESC
+        LIMIT ?
+      `).all(domainId, limit);
     }
 
-    // Default: curated library videos in domain
-    const videos = db.prepare(`
-      SELECT * FROM videos 
-      WHERE domain_id = ? AND source_type = 'manual'
-      ORDER BY created_at DESC
-      LIMIT ?
-    `).all(domainId, limit);
+    await resolveAndPersistDurations(videos);
 
     return NextResponse.json({ videos });
   } catch (err: any) {

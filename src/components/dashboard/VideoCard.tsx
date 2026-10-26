@@ -44,13 +44,9 @@ export function extractDurationFromTitle(title?: string): number {
   return 0;
 }
 
-export function getVideoDurationDisplay(video: { duration_seconds?: number; title?: string }): string {
+export function getVideoDurationDisplay(video: { duration_seconds?: number }): string {
   if (video.duration_seconds && video.duration_seconds > 0) {
     return formatDuration(video.duration_seconds);
-  }
-  const fromTitle = extractDurationFromTitle(video.title);
-  if (fromTitle > 0) {
-    return formatDuration(fromTitle);
   }
   return '';
 }

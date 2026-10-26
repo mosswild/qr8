@@ -2,6 +2,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import getDb from '@/lib/db';
 import WorkspaceDeck from '@/components/dashboard/WorkspaceDeck';
+import { resolveAndPersistDurations } from '@/lib/youtube/oembed';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +78,16 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
   // Creators list
   const creators = db.prepare('SELECT * FROM creators WHERE domain_id = ?').all(domainId) as any[];
+
+  // Ensure all videos displayed on the page have real durations resolved and persisted
+  const allLoadedVideos = [
+    ...dailyVideos,
+    ...whatsNewVideos,
+    ...recentVideos,
+    ...allVideos,
+    ...playlistsWithItems.flatMap((p) => p.videos),
+  ];
+  await resolveAndPersistDurations(allLoadedVideos);
 
   return (
     <WorkspaceDeck

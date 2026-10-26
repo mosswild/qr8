@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -76,6 +76,49 @@ export default function WorkspaceDeck({
   const handleRenamed = (newName: string) => {
     setDomainName(newName);
   };
+
+  // Ensure any videos missing duration are fetched and populated
+  useEffect(() => {
+    const allItems = [
+      ...allVideos,
+      ...whatsNewVideos,
+      ...recentVideos,
+      ...playlists.flatMap((p) => p.videos),
+    ];
+    const missingIds = allItems
+      .filter((v) => !v.duration_seconds || v.duration_seconds <= 0)
+      .map((v) => v.youtube_id)
+      .filter(Boolean);
+
+    if (missingIds.length === 0) return;
+
+    const uniqueMissing = Array.from(new Set(missingIds));
+    apiFetch('/api/videos/durations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ youtubeIds: uniqueMissing }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data?.durations) return;
+        const durMap = data.durations as Record<string, number>;
+        const applyDuration = (v: VideoItem) =>
+          durMap[v.youtube_id] && (!v.duration_seconds || v.duration_seconds <= 0)
+            ? { ...v, duration_seconds: durMap[v.youtube_id] }
+            : v;
+
+        setAllVideos((prev) => prev.map(applyDuration));
+        setWhatsNewVideos((prev) => prev.map(applyDuration));
+        setRecentVideos((prev) => prev.map(applyDuration));
+        setPlaylists((prev) =>
+          prev.map((pl) => ({
+            ...pl,
+            videos: pl.videos.map(applyDuration),
+          }))
+        );
+      })
+      .catch(() => {});
+  }, [allVideos.length, whatsNewVideos.length, recentVideos.length, playlists.length]);
 
   const handleArchiveWorkspace = async () => {
     setIsArchiving(true);
